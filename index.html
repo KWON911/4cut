@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,7 +8,6 @@
   <style>
     :root {
       --card: #151a2f;
-      --card-soft: #1b2138;
       --primary: #8b9cff;
       --primary-dark: #6f82ff;
       --sub: #222a45;
@@ -245,12 +243,51 @@
       display: flex;
     }
 
-    .capture-card {
-      border: 2px solid rgba(139, 156, 255, 0.58);
-      padding: 14px;
+    /* 미리보기 하단 위 빨간 원형 촬영 버튼 */
+    .shutter-area {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 28px;
+      z-index: 12;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .shutter-btn {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 10px solid rgba(255, 255, 255, 0.32);
+      background: #ff3147;
+      cursor: pointer;
+      pointer-events: auto;
       box-shadow:
-        var(--shadow),
-        0 0 24px rgba(139, 156, 255, 0.16);
+        0 10px 28px rgba(0, 0, 0, 0.48),
+        0 0 0 8px rgba(0, 0, 0, 0.22),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+      transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+    }
+
+    .shutter-btn:hover {
+      transform: scale(1.04);
+      filter: brightness(1.08);
+    }
+
+    .shutter-btn:active {
+      transform: scale(0.94);
+    }
+
+    .shutter-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .capture-card {
+      padding: 14px;
     }
 
     .capture-card h3,
@@ -260,9 +297,10 @@
       color: #f8fafc;
     }
 
-    .capture-row {
-      display: flex;
-      gap: 10px;
+    .reset-only-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
       align-items: center;
     }
 
@@ -292,35 +330,25 @@
       box-shadow: 0 10px 24px rgba(139, 156, 255, 0.28);
     }
 
-    .btn-main:hover {
-      background: linear-gradient(135deg, #7287ff 0%, #f454a3 100%);
-    }
-
     .btn-sub {
       background: #202842;
       color: #e5e7eb;
       border: 1px solid #3a4568;
     }
 
-    .capture-btn {
-      flex: 1;
-      font-size: 20px;
-      padding: 20px 16px;
-      border-radius: 18px;
-    }
-
     .reset-btn {
-      width: 96px;
-      padding: 20px 10px;
-      border-radius: 18px;
+      width: 100%;
+      padding: 16px 14px;
+      border-radius: 16px;
+      font-size: 16px;
     }
 
     .shot-mini {
-      min-width: 52px;
+      min-width: 58px;
       text-align: center;
       font-weight: 900;
       color: #dbe4ff;
-      font-size: 16px;
+      font-size: 17px;
     }
 
     .mode-card {
@@ -538,23 +566,32 @@
         border-radius: 18px;
       }
 
-      .capture-row {
-        gap: 8px;
+      .shutter-area {
+        bottom: 24px;
       }
 
-      .capture-btn {
-        font-size: 19px;
-        padding: 18px 10px;
+      .shutter-btn {
+        width: 86px;
+        height: 86px;
+        border-width: 9px;
+        box-shadow:
+          0 9px 24px rgba(0, 0, 0, 0.5),
+          0 0 0 7px rgba(0, 0, 0, 0.24),
+          inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+      }
+
+      .reset-only-row {
+        grid-template-columns: 1fr auto;
+        gap: 10px;
       }
 
       .reset-btn {
-        width: 82px;
-        padding: 18px 8px;
-        font-size: 14px;
+        padding: 15px 12px;
+        font-size: 15px;
       }
 
       .shot-mini {
-        min-width: 44px;
+        min-width: 48px;
         font-size: 15px;
       }
 
@@ -593,15 +630,18 @@
           <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
           <video id="video" autoplay playsinline muted></video>
           <div id="countOverlay" class="count-overlay">3</div>
+
+          <div class="shutter-area">
+            <button id="captureBtn" class="shutter-btn" aria-label="사진 촬영" title="사진 촬영"></button>
+          </div>
         </div>
 
         <div id="errorBox" class="error-box"></div>
 
         <div class="card capture-card">
           <h3>촬영</h3>
-          <div class="capture-row">
-            <button id="captureBtn" class="btn btn-main capture-btn">사진 촬영</button>
-            <button id="resetBtn" class="btn btn-sub reset-btn">초기화</button>
+          <div class="reset-only-row">
+            <button id="resetBtn" class="btn btn-sub reset-btn">촬영 초기화</button>
             <div class="shot-mini"><span id="shotMiniCount">0</span>/4</div>
           </div>
         </div>
@@ -619,7 +659,7 @@
           <strong>진행 상황</strong><br />
           현재 촬영 수: <span id="shotCount">0</span> / 4<br />
           선택 모드: <span id="modeLabel">수동 촬영</span><br />
-          자동촬영은 시작 후 4장이 연속으로 촬영됩니다.
+          자동촬영은 빨간 촬영 버튼을 누르면 시작됩니다.
         </div>
 
         <div class="card thumbs-wrap">
@@ -801,7 +841,8 @@
 
       modeLabelEl.textContent = modeText;
       guideText.textContent = `촬영 모드: ${modeText}`;
-      captureBtn.textContent = captureText;
+      captureBtn.setAttribute("aria-label", captureText);
+      captureBtn.setAttribute("title", captureText);
 
       renderThumbs();
     }
@@ -899,6 +940,11 @@
       captureCanvas.height = vh;
 
       capCtx.clearRect(0, 0, vw, vh);
+
+      /*
+        미리보기 video만 CSS로 좌우반전되어 보입니다.
+        캔버스에는 원본 영상을 그대로 그리므로 저장 결과물은 정상 방향입니다.
+      */
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
