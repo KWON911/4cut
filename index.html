@@ -205,6 +205,35 @@
       display: block;
       background: #000;
       transform: scaleX(-1);
+
+      /* 스마트폰에서 재생/일시정지 기본 UI가 뜨지 않도록 차단 */
+      pointer-events: none;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* iPhone/Safari/Chrome 모바일 기본 비디오 컨트롤 숨김 */
+    video::-webkit-media-controls {
+      display: none !important;
+    }
+
+    video::-webkit-media-controls-enclosure {
+      display: none !important;
+    }
+
+    video::-webkit-media-controls-panel {
+      display: none !important;
+    }
+
+    video::-webkit-media-controls-play-button {
+      display: none !important;
+    }
+
+    video::-webkit-media-controls-start-playback-button {
+      display: none !important;
+      -webkit-appearance: none;
     }
 
     .guide-badge {
@@ -583,7 +612,6 @@
         overflow: visible;
       }
 
-      /* PC 미리보기 세로형 강제 */
       .video-wrap {
         width: 100% !important;
         aspect-ratio: 3 / 4 !important;
@@ -592,7 +620,6 @@
         border-radius: 18px;
       }
 
-      /* PC에서 가로 웹캠 영상도 세로 틀 안에 꽉 차게 */
       .video-wrap video,
       video#video {
         width: 100% !important;
@@ -641,7 +668,6 @@
         line-height: 1.5;
       }
 
-      /* PC 촬영된 사진 4칸 세로형 강제 */
       .thumbs {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
         gap: 10px;
@@ -765,7 +791,17 @@
         <div class="camera-left">
           <div id="videoWrap" class="video-wrap">
             <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
-            <video id="video" autoplay playsinline muted></video>
+
+            <video
+              id="video"
+              autoplay
+              muted
+              playsinline
+              webkit-playsinline
+              disablepictureinpicture
+              controlslist="nodownload nofullscreen noremoteplayback noplaybackrate"
+            ></video>
+
             <div id="countOverlay" class="count-overlay">3</div>
 
             <div class="shutter-area">
@@ -827,7 +863,7 @@
         </div>
 
         <p class="notice">
-          PC에서는 미리보기와 촬영된 사진 틀이 세로형으로 표시됩니다.
+          스마트폰에서 미리보기 가운데 재생/일시정지 버튼이 보이지 않도록 수정했습니다.
         </p>
       </div>
     </section>
@@ -889,6 +925,16 @@
 
     const bgImage = new Image();
     bgImage.src = "background.png";
+
+    function preventVideoControls() {
+      video.controls = false;
+      video.removeAttribute("controls");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+      video.setAttribute("muted", "");
+      video.setAttribute("disablepictureinpicture", "");
+      video.setAttribute("controlslist", "nodownload nofullscreen noremoteplayback noplaybackrate");
+    }
 
     function syncVideoPreviewRatio() {
       /*
@@ -1073,6 +1119,7 @@
     async function startCamera() {
       hideError();
       stopCamera();
+      preventVideoControls();
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -1083,15 +1130,18 @@
         });
 
         video.srcObject = stream;
+        preventVideoControls();
 
         await new Promise((resolve) => {
           video.onloadedmetadata = () => {
             syncVideoPreviewRatio();
+            preventVideoControls();
             resolve();
           };
         });
 
         await video.play();
+        preventVideoControls();
         syncVideoPreviewRatio();
         await setCameraZoomToOne();
       } catch (err) {
@@ -1104,15 +1154,18 @@
           });
 
           video.srcObject = stream;
+          preventVideoControls();
 
           await new Promise((resolve) => {
             video.onloadedmetadata = () => {
               syncVideoPreviewRatio();
+              preventVideoControls();
               resolve();
             };
           });
 
           await video.play();
+          preventVideoControls();
           syncVideoPreviewRatio();
           await setCameraZoomToOne();
         } catch (fallbackErr) {
@@ -1386,6 +1439,7 @@
     window.addEventListener("resize", syncVideoPreviewRatio);
 
     window.addEventListener("load", async () => {
+      preventVideoControls();
       renderThumbs();
       updateStatus();
 
