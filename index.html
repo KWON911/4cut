@@ -9,7 +9,6 @@
     :root {
       --card: #151a2f;
       --primary: #8b9cff;
-      --sub: #222a45;
       --text: #f8fafc;
       --muted: #aeb8d4;
       --border: #2f3a5f;
@@ -32,8 +31,6 @@
         radial-gradient(circle at bottom right, rgba(255, 79, 163, 0.16), transparent 34%),
         linear-gradient(180deg, #080b16 0%, #101426 52%, #080b16 100%);
       color: var(--text);
-
-      /* 핵심 수정: PC에서도 상하 스크롤 가능 */
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -42,7 +39,7 @@
       width: 100%;
       max-width: 1240px;
       margin: 0 auto;
-      padding: 12px 12px 48px;
+      padding: 12px 12px 56px;
     }
 
     .screen {
@@ -103,8 +100,7 @@
       font-size: clamp(30px, 4vw, 48px);
       font-weight: 950;
       line-height: 1.05;
-      letter-spacing: -1px;
-      color: #ffffff;
+      color: #fff;
       text-shadow:
         0 0 8px rgba(255, 255, 255, 0.38),
         0 0 18px rgba(139, 156, 255, 0.55),
@@ -135,7 +131,6 @@
       color: rgba(245, 247, 255, 0.92);
       font-size: 13px;
       font-weight: 700;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
     }
 
     .sparkle {
@@ -205,7 +200,14 @@
     video {
       width: 100%;
       height: 100%;
+
+      /*
+        핵심:
+        cover = 화면을 채우려고 확대/크롭
+        contain = 확대하지 않고 원본 비율 유지
+      */
       object-fit: contain;
+
       display: block;
       background: #000;
       transform: scaleX(-1);
@@ -384,7 +386,7 @@
     }
 
     .status-box strong {
-      color: #ffffff;
+      color: #fff;
     }
 
     .thumbs-wrap {
@@ -441,7 +443,7 @@
 
     .editor-card {
       width: min(100%, 760px);
-      margin: 0 auto 48px;
+      margin: 0 auto 56px;
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -514,16 +516,8 @@
       display: none;
     }
 
-    /* PC 가로 배치 + 스크롤 가능 */
+    /* PC 가로 배치 */
     @media (min-width: 760px) {
-      html,
-      body {
-        height: auto;
-        min-height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
-      }
-
       .app {
         min-height: 100dvh;
         padding: 10px 14px 60px;
@@ -567,32 +561,20 @@
       .camera-main {
         width: 100% !important;
         max-width: 1180px !important;
-        min-height: 0;
         margin: 0 auto;
         display: grid !important;
         grid-template-columns: minmax(360px, 460px) minmax(360px, 1fr);
-        grid-template-rows: auto;
         gap: 14px;
         align-items: start;
       }
 
-      .camera-left {
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-      }
-
       .camera-right {
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
         gap: 10px;
         overflow: visible;
       }
 
       .video-wrap {
         width: 100%;
-        aspect-ratio: 3 / 4;
         border-radius: 18px;
       }
 
@@ -604,10 +586,6 @@
         width: 76px;
         height: 76px;
         border-width: 8px;
-        box-shadow:
-          0 8px 20px rgba(0, 0, 0, 0.5),
-          0 0 0 6px rgba(0, 0, 0, 0.24),
-          inset 0 0 0 2px rgba(255, 255, 255, 0.16);
       }
 
       .card {
@@ -650,11 +628,6 @@
         font-size: 12px;
       }
 
-      .error-box {
-        font-size: 13px;
-        padding: 10px 12px;
-      }
-
       .editor-card {
         width: min(100%, 620px);
         margin: 0 auto 80px;
@@ -664,7 +637,7 @@
     /* 모바일 세로 배치 */
     @media (max-width: 759px) {
       .app {
-        padding: 10px 8px 48px;
+        padding: 10px 8px 56px;
       }
 
       .title-hero {
@@ -753,7 +726,7 @@
     <section id="cameraScreen" class="screen active">
       <div class="camera-main">
         <div class="camera-left">
-          <div class="video-wrap">
+          <div id="videoWrap" class="video-wrap">
             <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
             <video id="video" autoplay playsinline muted></video>
             <div id="countOverlay" class="count-overlay">3</div>
@@ -817,7 +790,7 @@
         </div>
 
         <p class="notice">
-          결과 화면에서도 아래로 스크롤하여 저장 버튼을 누를 수 있습니다.
+          스마트폰에서는 카메라 원본 비율을 그대로 사용해 미리보기 확대를 줄였습니다.
         </p>
       </div>
     </section>
@@ -846,6 +819,7 @@
     }));
 
     const video = document.getElementById("video");
+    const videoWrap = document.getElementById("videoWrap");
 
     const captureBtn = document.getElementById("captureBtn");
     const resetBtn = document.getElementById("resetBtn");
@@ -878,6 +852,21 @@
 
     const bgImage = new Image();
     bgImage.src = "background.png";
+
+    function syncVideoPreviewRatio() {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+
+      if (!vw || !vh) return;
+
+      /*
+        핵심 수정:
+        미리보기 박스 비율을 3:4로 고정하지 않고
+        실제 카메라 영상 비율로 바꿉니다.
+        그래서 스마트폰에서 억지 확대/크롭이 줄어듭니다.
+      */
+      videoWrap.style.aspectRatio = `${vw} / ${vh}`;
+    }
 
     function unlockAudio() {
       try {
@@ -1042,25 +1031,59 @@
       stopCamera();
 
       try {
+        /*
+          핵심 수정:
+          width, height, aspectRatio를 강제하지 않습니다.
+          스마트폰 브라우저가 카메라 원본에 가까운 자연스러운 비율을 선택하게 합니다.
+        */
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: "user",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            aspectRatio: { ideal: 1.777777 }
+            facingMode: { ideal: "user" }
           },
           audio: false
         });
 
         video.srcObject = stream;
-        await video.play();
 
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            syncVideoPreviewRatio();
+            resolve();
+          };
+        });
+
+        await video.play();
+        syncVideoPreviewRatio();
         await setCameraZoomToOne();
+
       } catch (err) {
         console.error(err);
-        showError(
-          "카메라를 사용할 수 없습니다. 브라우저의 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages 또는 HTTPS 환경에서 실행하는 것이 좋습니다."
-        );
+
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+
+          video.srcObject = stream;
+
+          await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+              syncVideoPreviewRatio();
+              resolve();
+            };
+          });
+
+          await video.play();
+          syncVideoPreviewRatio();
+          await setCameraZoomToOne();
+
+        } catch (fallbackErr) {
+          console.error(fallbackErr);
+          showError(
+            "카메라를 사용할 수 없습니다. 브라우저의 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages 또는 HTTPS 환경에서 실행하는 것이 좋습니다."
+          );
+        }
       }
     }
 
@@ -1091,6 +1114,11 @@
       captureCanvas.height = vh;
 
       capCtx.clearRect(0, 0, vw, vh);
+
+      /*
+        미리보기만 거울보기입니다.
+        저장되는 사진은 정상 방향입니다.
+      */
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
@@ -1324,6 +1352,8 @@
         previewStage.style.aspectRatio = `${bgImage.naturalWidth} / ${bgImage.naturalHeight}`;
       }
     };
+
+    window.addEventListener("resize", syncVideoPreviewRatio);
 
     window.addEventListener("load", async () => {
       renderThumbs();
