@@ -24,6 +24,7 @@
     body {
       margin: 0;
       min-height: 100%;
+      height: auto !important;
       font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
         "Noto Sans KR", "Malgun Gothic", sans-serif;
       background:
@@ -31,15 +32,15 @@
         radial-gradient(circle at bottom right, rgba(255, 79, 163, 0.16), transparent 34%),
         linear-gradient(180deg, #080b16 0%, #101426 52%, #080b16 100%);
       color: var(--text);
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
     }
 
     .app {
       width: 100%;
       max-width: 1240px;
       margin: 0 auto;
-      padding: 12px 12px 56px;
+      padding: 12px 12px 72px;
     }
 
     .screen {
@@ -156,7 +157,6 @@
       0%, 100% {
         transform: translateY(0) rotate(0deg) scale(1);
       }
-
       50% {
         transform: translateY(-8px) rotate(8deg) scale(1.12);
       }
@@ -200,14 +200,7 @@
     video {
       width: 100%;
       height: 100%;
-
-      /*
-        핵심:
-        cover = 화면을 채우려고 확대/크롭
-        contain = 확대하지 않고 원본 비율 유지
-      */
       object-fit: contain;
-
       display: block;
       background: #000;
       transform: scaleX(-1);
@@ -401,8 +394,9 @@
 
     .thumbs {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
+      align-items: start;
     }
 
     .thumb {
@@ -443,7 +437,7 @@
 
     .editor-card {
       width: min(100%, 760px);
-      margin: 0 auto 56px;
+      margin: 0 auto 120px;
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -496,12 +490,21 @@
       -webkit-user-drag: none;
     }
 
+    /* 결과 화면 버튼 항상 보이게 */
     .editor-actions {
+      position: sticky;
+      bottom: 12px;
+      z-index: 20;
       display: flex;
       gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
-      padding-bottom: 24px;
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(8, 11, 22, 0.88);
+      border: 1px solid rgba(84, 101, 160, 0.35);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
     }
 
     .notice {
@@ -510,17 +513,23 @@
       text-align: center;
       font-size: 13px;
       line-height: 1.6;
+      padding-bottom: 20px;
     }
 
     canvas {
       display: none;
     }
 
-    /* PC 가로 배치 */
     @media (min-width: 760px) {
+      html,
+      body {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+
       .app {
-        min-height: 100dvh;
-        padding: 10px 14px 60px;
+        min-height: auto;
+        padding: 10px 14px 90px;
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -619,25 +628,26 @@
         line-height: 1.5;
       }
 
+      /* 핵심: PC에서도 세로형 썸네일 유지 */
       .thumbs {
-        gap: 8px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
       }
 
       .thumb {
-        aspect-ratio: 4 / 3;
+        aspect-ratio: 3 / 4;
         font-size: 12px;
       }
 
       .editor-card {
         width: min(100%, 620px);
-        margin: 0 auto 80px;
+        margin: 0 auto 140px;
       }
     }
 
-    /* 모바일 세로 배치 */
     @media (max-width: 759px) {
       .app {
-        padding: 10px 8px 56px;
+        padding: 10px 8px 72px;
       }
 
       .title-hero {
@@ -700,6 +710,11 @@
       .shot-mini {
         min-width: 48px;
         font-size: 15px;
+      }
+
+      .editor-actions {
+        bottom: 8px;
+        padding: 12px;
       }
     }
   </style>
@@ -790,7 +805,7 @@
         </div>
 
         <p class="notice">
-          스마트폰에서는 카메라 원본 비율을 그대로 사용해 미리보기 확대를 줄였습니다.
+          결과 화면에서는 저장 버튼이 하단에 항상 보이도록 수정했습니다.
         </p>
       </div>
     </section>
@@ -856,15 +871,7 @@
     function syncVideoPreviewRatio() {
       const vw = video.videoWidth;
       const vh = video.videoHeight;
-
       if (!vw || !vh) return;
-
-      /*
-        핵심 수정:
-        미리보기 박스 비율을 3:4로 고정하지 않고
-        실제 카메라 영상 비율로 바꿉니다.
-        그래서 스마트폰에서 억지 확대/크롭이 줄어듭니다.
-      */
       videoWrap.style.aspectRatio = `${vw} / ${vh}`;
     }
 
@@ -872,14 +879,8 @@
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-
-        if (!audioCtx) {
-          audioCtx = new AudioContext();
-        }
-
-        if (audioCtx.state === "suspended") {
-          audioCtx.resume();
-        }
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") audioCtx.resume();
       } catch (e) {
         console.warn("오디오 초기화 실패:", e);
       }
@@ -891,7 +892,6 @@
         if (!audioCtx) return;
 
         const now = audioCtx.currentTime;
-
         const masterGain = audioCtx.createGain();
         masterGain.gain.setValueAtTime(0.0001, now);
         masterGain.gain.exponentialRampToValueAtTime(0.6, now + 0.01);
@@ -900,33 +900,25 @@
 
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
-
         osc1.type = "square";
         osc1.frequency.setValueAtTime(1200, now);
-
         gain1.gain.setValueAtTime(0.0001, now);
         gain1.gain.exponentialRampToValueAtTime(0.45, now + 0.005);
         gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
-
         osc1.connect(gain1);
         gain1.connect(masterGain);
-
         osc1.start(now);
         osc1.stop(now + 0.05);
 
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
-
         osc2.type = "triangle";
         osc2.frequency.setValueAtTime(700, now + 0.06);
-
         gain2.gain.setValueAtTime(0.0001, now + 0.06);
         gain2.gain.exponentialRampToValueAtTime(0.35, now + 0.065);
         gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-
         osc2.connect(gain2);
         gain2.connect(masterGain);
-
         osc2.start(now + 0.06);
         osc2.stop(now + 0.15);
       } catch (e) {
@@ -948,15 +940,8 @@
       shotCountEl.textContent = shots.length;
       shotMiniCount.textContent = shots.length;
 
-      const modeText =
-        currentMode === "manual"
-          ? "수동 촬영"
-          : `${currentMode}초 자동촬영`;
-
-      const captureText =
-        currentMode === "manual"
-          ? "사진 촬영"
-          : `${currentMode}초 자동촬영 시작`;
+      const modeText = currentMode === "manual" ? "수동 촬영" : `${currentMode}초 자동촬영`;
+      const captureText = currentMode === "manual" ? "사진 촬영" : `${currentMode}초 자동촬영 시작`;
 
       modeLabelEl.textContent = modeText;
       guideText.textContent = `촬영 모드: ${modeText}`;
@@ -973,7 +958,6 @@
 
     function renderThumbs() {
       thumbs.innerHTML = "";
-
       for (let i = 0; i < 4; i++) {
         const box = document.createElement("div");
         box.className = "thumb";
@@ -986,18 +970,15 @@
         } else {
           box.textContent = `${i + 1}번`;
         }
-
         thumbs.appendChild(box);
       }
     }
 
     function setMode(mode) {
       currentMode = mode;
-
       modeButtons.forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.mode === mode);
       });
-
       updateStatus();
     }
 
@@ -1011,10 +992,8 @@
     async function setCameraZoomToOne() {
       try {
         if (!stream) return;
-
         const track = stream.getVideoTracks()[0];
         if (!track) return;
-
         const capabilities = track.getCapabilities ? track.getCapabilities() : {};
         if ("zoom" in capabilities) {
           await track.applyConstraints({
@@ -1022,7 +1001,7 @@
           });
         }
       } catch (e) {
-        console.warn("카메라 1배 줌 설정을 지원하지 않는 브라우저입니다.", e);
+        console.warn("카메라 1배 줌 설정 미지원:", e);
       }
     }
 
@@ -1031,11 +1010,6 @@
       stopCamera();
 
       try {
-        /*
-          핵심 수정:
-          width, height, aspectRatio를 강제하지 않습니다.
-          스마트폰 브라우저가 카메라 원본에 가까운 자연스러운 비율을 선택하게 합니다.
-        */
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "user" }
@@ -1055,10 +1029,8 @@
         await video.play();
         syncVideoPreviewRatio();
         await setCameraZoomToOne();
-
       } catch (err) {
         console.error(err);
-
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
@@ -1077,12 +1049,9 @@
           await video.play();
           syncVideoPreviewRatio();
           await setCameraZoomToOne();
-
         } catch (fallbackErr) {
           console.error(fallbackErr);
-          showError(
-            "카메라를 사용할 수 없습니다. 브라우저의 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages 또는 HTTPS 환경에서 실행하는 것이 좋습니다."
-          );
+          showError("카메라를 사용할 수 없습니다. 브라우저의 카메라 권한을 허용했는지 확인해 주세요.");
         }
       }
     }
@@ -1097,7 +1066,6 @@
         countOverlay.classList.add("show");
         await wait(1000);
       }
-
       countOverlay.classList.remove("show");
     }
 
@@ -1112,17 +1080,10 @@
 
       captureCanvas.width = vw;
       captureCanvas.height = vh;
-
       capCtx.clearRect(0, 0, vw, vh);
-
-      /*
-        미리보기만 거울보기입니다.
-        저장되는 사진은 정상 방향입니다.
-      */
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
-
       return captureCanvas.toDataURL("image/png");
     }
 
@@ -1130,22 +1091,14 @@
       cameraScreen.classList.remove("active");
       editorScreen.classList.add("active");
       buildPreview();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function switchToCamera() {
       editorScreen.classList.remove("active");
       cameraScreen.classList.add("active");
       startCamera();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function buildPreview() {
@@ -1158,7 +1111,6 @@
       SLOT_CONFIG.forEach((slot, index) => {
         const slotBox = document.createElement("div");
         slotBox.className = "slot";
-
         slotBox.style.left = `${slot.x * 100}%`;
         slotBox.style.top = `${slot.y * 100}%`;
         slotBox.style.width = `${slot.w * 100}%`;
@@ -1187,9 +1139,7 @@
       shots.push(photo);
       updateStatus();
 
-      if (shots.length === 4) {
-        switchToEditor();
-      }
+      if (shots.length === 4) switchToEditor();
     }
 
     async function handleAutoCapture(intervalSec) {
@@ -1201,7 +1151,6 @@
       try {
         while (shots.length < 4) {
           await showCountdown(intervalSec);
-
           const photo = capturePhoto();
           if (!photo) break;
 
@@ -1211,9 +1160,7 @@
           if (shots.length >= 4) break;
         }
 
-        if (shots.length === 4) {
-          switchToEditor();
-        }
+        if (shots.length === 4) switchToEditor();
       } finally {
         isCapturing = false;
         setButtonsDisabled(false);
@@ -1269,14 +1216,12 @@
 
     function getTimestampForFileName() {
       const now = new Date();
-
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
       const dd = String(now.getDate()).padStart(2, "0");
       const hh = String(now.getHours()).padStart(2, "0");
       const mi = String(now.getMinutes()).padStart(2, "0");
       const ss = String(now.getSeconds()).padStart(2, "0");
-
       return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
     }
 
@@ -1295,7 +1240,6 @@
       for (let i = 0; i < SLOT_CONFIG.length; i++) {
         const slot = SLOT_CONFIG[i];
         const src = shots[i];
-
         if (!src) continue;
 
         const img = await loadImage(src);
