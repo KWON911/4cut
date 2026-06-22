@@ -208,8 +208,8 @@
 
       /*
         핵심:
-        video 자체가 터치되지 않게 막아서
-        스마트폰 브라우저의 재생/일시정지 UI가 뜨지 않게 합니다.
+        video 자체는 터치 대상이 되지 않게 합니다.
+        투명 차단막은 삭제했으므로 스크롤은 정상 작동합니다.
       */
       pointer-events: none !important;
       touch-action: none !important;
@@ -227,20 +227,6 @@
       -webkit-appearance: none !important;
       opacity: 0 !important;
       pointer-events: none !important;
-    }
-
-    /*
-      video 위에 투명한 막을 올려서
-      사용자가 카메라 화면을 눌러도 video가 직접 터치되지 않게 합니다.
-      촬영 버튼은 이 막보다 위에 있어서 정상 작동합니다.
-    */
-    .video-touch-blocker {
-      position: absolute;
-      inset: 0;
-      z-index: 4;
-      background: transparent;
-      pointer-events: auto;
-      touch-action: pan-y;
     }
 
     .guide-badge {
@@ -284,7 +270,7 @@
       left: 0;
       right: 0;
       bottom: 28px;
-      z-index: 12;
+      z-index: 50;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -292,6 +278,8 @@
     }
 
     .shutter-btn {
+      position: relative;
+      z-index: 51;
       width: 96px;
       height: 96px;
       border-radius: 50%;
@@ -620,10 +608,6 @@
         border-radius: 18px;
       }
 
-      /*
-        PC에서는 세로 틀에 꽉 차게 보이도록 cover.
-        스마트폰에서는 아래 max-width 영역의 기본 contain과 원본 비율을 사용합니다.
-      */
       .video-wrap video,
       video#video {
         width: 100% !important;
@@ -796,8 +780,6 @@
               controlslist="nodownload nofullscreen noremoteplayback noplaybackrate"
             ></video>
 
-            <div class="video-touch-blocker" id="videoTouchBlocker"></div>
-
             <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
             <div id="countOverlay" class="count-overlay">3</div>
 
@@ -860,7 +842,7 @@
         </div>
 
         <p class="notice">
-          카메라 화면은 video 원본으로 표시하고, 터치 차단막으로 재생/일시정지 버튼을 막았습니다.
+          결과 화면으로 넘어가면 카메라가 자동으로 꺼집니다.
         </p>
       </div>
     </section>
@@ -890,7 +872,6 @@
 
     const video = document.getElementById("video");
     const videoWrap = document.getElementById("videoWrap");
-    const videoTouchBlocker = document.getElementById("videoTouchBlocker");
 
     const captureBtn = document.getElementById("captureBtn");
     const resetBtn = document.getElementById("resetBtn");
@@ -924,18 +905,6 @@
     const bgImage = new Image();
     bgImage.src = "background.png";
 
-    function blockVideoTouchEvents() {
-      const block = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      };
-
-      ["click", "dblclick", "touchstart", "touchmove", "touchend", "pointerdown", "pointerup"].forEach((eventName) => {
-        video.addEventListener(eventName, block, { passive: false });
-        videoTouchBlocker.addEventListener(eventName, block, { passive: false });
-      });
-    }
-
     function preventVideoControls() {
       video.controls = false;
       video.removeAttribute("controls");
@@ -961,10 +930,6 @@
         return;
       }
 
-      /*
-        스마트폰에서는 카메라 원본 비율 그대로 표시합니다.
-        video도 contain이므로 확대/크롭하지 않습니다.
-      */
       videoWrap.style.aspectRatio = `${vw} / ${vh}`;
     }
 
@@ -1103,8 +1068,24 @@
 
     function stopCamera() {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(track => {
+          try {
+            track.stop();
+          } catch (e) {
+            console.warn("카메라 트랙 종료 실패:", e);
+          }
+        });
+
         stream = null;
+      }
+
+      try {
+        video.pause();
+        video.srcObject = null;
+        video.removeAttribute("src");
+        video.load();
+      } catch (e) {
+        console.warn("비디오 연결 해제 실패:", e);
       }
     }
 
@@ -1213,11 +1194,6 @@
       captureCanvas.height = vh;
 
       capCtx.clearRect(0, 0, vw, vh);
-
-      /*
-        미리보기만 좌우반전입니다.
-        저장되는 사진은 정상 방향입니다.
-      */
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
@@ -1226,6 +1202,8 @@
     }
 
     function switchToEditor() {
+      stopCamera();
+
       cameraScreen.classList.remove("active");
       editorScreen.classList.add("active");
       buildPreview();
@@ -1455,7 +1433,6 @@
     window.addEventListener("resize", syncVideoPreviewRatio);
 
     window.addEventListener("load", async () => {
-      blockVideoTouchEvents();
       preventVideoControls();
       renderThumbs();
       updateStatus();
@@ -1466,6 +1443,10 @@
       }
 
       await startCamera();
+    });
+
+    window.addEventListener("pagehide", () => {
+      stopCamera();
     });
 
     window.addEventListener("beforeunload", () => {
