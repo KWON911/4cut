@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>행복 네 컷</title>
+
   <style>
     :root {
       --bg: #f5f7ff;
@@ -287,7 +288,7 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      transform: scale(1.08); /* 사진을 조금 키워 검정 여백 방지 */
+      transform: scale(1.08);
       transform-origin: center center;
     }
 
@@ -323,12 +324,12 @@
     }
   </style>
 </head>
+
 <body>
   <div class="app">
     <h1>행복 네 컷</h1>
     <p class="subtitle">카메라로 4장을 촬영하고 배경 프레임에 자동 합성해 보세요.</p>
 
-    <!-- 촬영 화면 -->
     <section id="cameraScreen" class="screen active">
       <div class="card">
         <div class="camera-layout">
@@ -382,7 +383,6 @@
       </div>
     </section>
 
-    <!-- 편집 화면 -->
     <section id="editorScreen" class="screen">
       <div class="card editor-card">
         <div id="previewStage" class="preview-stage" aria-label="행복 네 컷 미리보기">
@@ -396,7 +396,7 @@
         </div>
 
         <p class="notice">
-          사진은 프레임보다 약간 크게 배치되어, 슬롯 가장자리의 검정 여백이 보이지 않도록 처리됩니다.
+          사진은 프레임보다 약간 크게 배치되어 슬롯 가장자리의 검정 여백이 보이지 않도록 처리됩니다.
         </p>
       </div>
     </section>
@@ -406,21 +406,19 @@
 
   <script>
     /*********************************************************
-     * 실제 배경 이미지 기준 슬롯 좌표(픽셀)
-     * 이전 비율 좌표보다 실제 슬롯 위치에 더 맞춘 값
+     * 실제 배경 이미지 기준 슬롯 좌표
      *********************************************************/
     const BASE_W = 1448;
     const BASE_H = 2048;
 
     const RAW_SLOTS = [
-      { x: 81,  y: 450,  w: 609, h: 740 }, // 왼쪽 위
-      { x: 80,  y: 1226, w: 606, h: 743 }, // 왼쪽 아래
-      { x: 770, y: 91,   w: 609, h: 740 }, // 오른쪽 위
-      { x: 769, y: 863,  w: 609, h: 742 }, // 오른쪽 아래
+      { x: 81,  y: 450,  w: 609, h: 740 },
+      { x: 80,  y: 1226, w: 606, h: 743 },
+      { x: 770, y: 91,   w: 609, h: 740 },
+      { x: 769, y: 863,  w: 609, h: 742 },
     ];
 
-    // 다운로드용 사진 확대 비율
-    const OVERFILL_RATIO = 0.10; // 10% 확대
+    const OVERFILL_RATIO = 0.10;
 
     const SLOT_CONFIG = RAW_SLOTS.map(slot => ({
       x: slot.x / BASE_W,
@@ -445,7 +443,6 @@
     const editorScreen = document.getElementById("editorScreen");
     const previewStage = document.getElementById("previewStage");
     const photoLayer = document.getElementById("photoLayer");
-    const frameLayer = document.getElementById("frameLayer");
 
     const captureCanvas = document.getElementById("captureCanvas");
     const capCtx = captureCanvas.getContext("2d");
@@ -454,11 +451,82 @@
 
     let stream = null;
     let shots = [];
-    let currentMode = "manual"; // manual, 1, 3
+    let currentMode = "manual";
     let isCapturing = false;
+    let audioCtx = null;
 
     const bgImage = new Image();
     bgImage.src = "background.png";
+
+    /*********************************************************
+     * 셔터 소리
+     * 별도 mp3 파일 없이 Web Audio API로 찰칵 소리 생성
+     *********************************************************/
+    function unlockAudio() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+        }
+
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        console.warn("오디오 초기화 실패:", e);
+      }
+    }
+
+    function playShutterSound() {
+      try {
+        unlockAudio();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.0001, now);
+        masterGain.gain.exponentialRampToValueAtTime(0.6, now + 0.01);
+        masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+        masterGain.connect(audioCtx.destination);
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+
+        osc1.type = "square";
+        osc1.frequency.setValueAtTime(1200, now);
+
+        gain1.gain.setValueAtTime(0.0001, now);
+        gain1.gain.exponentialRampToValueAtTime(0.45, now + 0.005);
+        gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+        osc1.connect(gain1);
+        gain1.connect(masterGain);
+
+        osc1.start(now);
+        osc1.stop(now + 0.05);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+
+        osc2.type = "triangle";
+        osc2.frequency.setValueAtTime(700, now + 0.06);
+
+        gain2.gain.setValueAtTime(0.0001, now + 0.06);
+        gain2.gain.exponentialRampToValueAtTime(0.35, now + 0.065);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+        osc2.connect(gain2);
+        gain2.connect(masterGain);
+
+        osc2.start(now + 0.06);
+        osc2.stop(now + 0.15);
+      } catch (e) {
+        console.warn("셔터 소리 재생 실패:", e);
+      }
+    }
 
     function showError(message) {
       errorBox.textContent = message;
@@ -487,6 +555,7 @@
 
     function renderThumbs() {
       thumbs.innerHTML = "";
+
       for (let i = 0; i < 4; i++) {
         const box = document.createElement("div");
         box.className = "thumb";
@@ -506,9 +575,11 @@
 
     function setMode(mode) {
       currentMode = mode;
+
       modeButtons.forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.mode === mode);
       });
+
       updateStatus();
     }
 
@@ -537,7 +608,9 @@
         await video.play();
       } catch (err) {
         console.error(err);
-        showError("카메라를 사용할 수 없습니다. 브라우저 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages 또는 HTTPS 환경에서 실행하는 것이 좋습니다.");
+        showError(
+          "카메라를 사용할 수 없습니다. 브라우저의 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages 또는 HTTPS 환경에서 실행하는 것이 좋습니다."
+        );
       }
     }
 
@@ -551,6 +624,7 @@
         countOverlay.classList.add("show");
         await wait(1000);
       }
+
       countOverlay.classList.remove("show");
     }
 
@@ -565,8 +639,11 @@
 
       captureCanvas.width = vw;
       captureCanvas.height = vh;
+
       capCtx.clearRect(0, 0, vw, vh);
       capCtx.drawImage(video, 0, 0, vw, vh);
+
+      playShutterSound();
 
       return captureCanvas.toDataURL("image/png");
     }
@@ -593,6 +670,7 @@
       SLOT_CONFIG.forEach((slot, index) => {
         const slotBox = document.createElement("div");
         slotBox.className = "slot";
+
         slotBox.style.left = `${slot.x * 100}%`;
         slotBox.style.top = `${slot.y * 100}%`;
         slotBox.style.width = `${slot.w * 100}%`;
@@ -601,6 +679,7 @@
         const img = document.createElement("img");
         img.src = shots[index];
         img.alt = `촬영 사진 ${index + 1}`;
+
         slotBox.appendChild(img);
         photoLayer.appendChild(slotBox);
       });
@@ -688,12 +767,14 @@
 
     function getTimestampForFileName() {
       const now = new Date();
+
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
       const dd = String(now.getDate()).padStart(2, "0");
       const hh = String(now.getHours()).padStart(2, "0");
       const mi = String(now.getMinutes()).padStart(2, "0");
       const ss = String(now.getSeconds()).padStart(2, "0");
+
       return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
     }
 
@@ -706,11 +787,13 @@
       const finalCanvas = document.createElement("canvas");
       finalCanvas.width = bgImage.naturalWidth;
       finalCanvas.height = bgImage.naturalHeight;
+
       const ctx = finalCanvas.getContext("2d");
 
       for (let i = 0; i < SLOT_CONFIG.length; i++) {
         const slot = SLOT_CONFIG[i];
         const src = shots[i];
+
         if (!src) continue;
 
         const img = await loadImage(src);
@@ -720,7 +803,6 @@
         const w = slot.w * finalCanvas.width;
         const h = slot.h * finalCanvas.height;
 
-        // 사진을 슬롯보다 조금 크게 그려 검정 여백 방지
         const extraW = w * OVERFILL_RATIO;
         const extraH = h * OVERFILL_RATIO;
 
@@ -734,7 +816,6 @@
         );
       }
 
-      // 배경 프레임을 마지막에 그려서 사진 위에 덮음
       ctx.drawImage(bgImage, 0, 0, finalCanvas.width, finalCanvas.height);
 
       const link = document.createElement("a");
@@ -751,6 +832,7 @@
     });
 
     captureBtn.addEventListener("click", async () => {
+      unlockAudio();
       hideError();
 
       if (shots.length >= 4) {
