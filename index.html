@@ -191,7 +191,7 @@
     .video-wrap {
       position: relative;
       width: 100%;
-      aspect-ratio: 1448 / 2048;
+      aspect-ratio: 3 / 4;
       background: #000;
       border-radius: 20px;
       overflow: hidden;
@@ -243,7 +243,6 @@
       display: flex;
     }
 
-    /* 미리보기 하단 위 빨간 원형 촬영 버튼 */
     .shutter-area {
       position: absolute;
       left: 0;
@@ -562,7 +561,7 @@
       }
 
       .video-wrap {
-        aspect-ratio: 1448 / 2048;
+        aspect-ratio: 3 / 4;
         border-radius: 18px;
       }
 
@@ -687,7 +686,7 @@
         </div>
 
         <p class="notice">
-          촬영 화면은 거울보기처럼 보이지만, 저장되는 사진과 최종 이미지는 정상 방향으로 저장됩니다.
+          미리보기 카메라 비율은 3:4, 카메라 줌은 가능한 경우 1배로 설정됩니다.
         </p>
       </div>
     </section>
@@ -889,6 +888,24 @@
       }
     }
 
+    async function setCameraZoomToOne() {
+      try {
+        if (!stream) return;
+
+        const track = stream.getVideoTracks()[0];
+        if (!track) return;
+
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if ("zoom" in capabilities) {
+          await track.applyConstraints({
+            advanced: [{ zoom: 1 }]
+          });
+        }
+      } catch (e) {
+        console.warn("카메라 1배 줌 설정을 지원하지 않는 브라우저입니다.", e);
+      }
+    }
+
     async function startCamera() {
       hideError();
       stopCamera();
@@ -898,13 +915,16 @@
           video: {
             facingMode: "user",
             width: { ideal: 1080 },
-            height: { ideal: 1440 }
+            height: { ideal: 1440 },
+            aspectRatio: { ideal: 0.75 }
           },
           audio: false
         });
 
         video.srcObject = stream;
         await video.play();
+
+        await setCameraZoomToOne();
       } catch (err) {
         console.error(err);
         showError(
