@@ -206,41 +206,48 @@
       background: #000;
       transform: scaleX(-1);
 
-      /* 스마트폰에서 재생/일시정지 기본 UI가 뜨지 않도록 차단 */
-      pointer-events: none;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
+      /*
+        핵심:
+        video 자체가 터치되지 않게 막아서
+        스마트폰 브라우저의 재생/일시정지 UI가 뜨지 않게 합니다.
+      */
+      pointer-events: none !important;
+      touch-action: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
     }
 
-    /* iPhone/Safari/Chrome 모바일 기본 비디오 컨트롤 숨김 */
-    video::-webkit-media-controls {
-      display: none !important;
-    }
-
-    video::-webkit-media-controls-enclosure {
-      display: none !important;
-    }
-
-    video::-webkit-media-controls-panel {
-      display: none !important;
-    }
-
-    video::-webkit-media-controls-play-button {
-      display: none !important;
-    }
-
+    video::-webkit-media-controls,
+    video::-webkit-media-controls-enclosure,
+    video::-webkit-media-controls-panel,
+    video::-webkit-media-controls-play-button,
     video::-webkit-media-controls-start-playback-button {
       display: none !important;
-      -webkit-appearance: none;
+      -webkit-appearance: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /*
+      video 위에 투명한 막을 올려서
+      사용자가 카메라 화면을 눌러도 video가 직접 터치되지 않게 합니다.
+      촬영 버튼은 이 막보다 위에 있어서 정상 작동합니다.
+    */
+    .video-touch-blocker {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      background: transparent;
+      pointer-events: auto;
+      touch-action: pan-y;
     }
 
     .guide-badge {
       position: absolute;
       left: 12px;
       top: 12px;
-      z-index: 5;
+      z-index: 6;
       background: rgba(0, 0, 0, 0.62);
       color: #fff;
       padding: 8px 12px;
@@ -248,6 +255,7 @@
       font-size: 13px;
       border: 1px solid rgba(255, 255, 255, 0.16);
       backdrop-filter: blur(8px);
+      pointer-events: none;
     }
 
     .count-overlay {
@@ -549,14 +557,7 @@
       display: none;
     }
 
-    /* PC 화면 */
     @media (min-width: 760px) {
-      html,
-      body {
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-      }
-
       .app {
         min-height: auto;
         padding: 10px 14px 90px;
@@ -566,7 +567,6 @@
       }
 
       .title-hero {
-        flex: 0 0 auto;
         max-width: 1180px;
         padding: 10px 16px 12px;
         margin-bottom: 0;
@@ -620,6 +620,10 @@
         border-radius: 18px;
       }
 
+      /*
+        PC에서는 세로 틀에 꽉 차게 보이도록 cover.
+        스마트폰에서는 아래 max-width 영역의 기본 contain과 원본 비율을 사용합니다.
+      */
       .video-wrap video,
       video#video {
         width: 100% !important;
@@ -671,7 +675,6 @@
       .thumbs {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
         gap: 10px;
-        align-items: start !important;
       }
 
       .thumb {
@@ -680,19 +683,12 @@
         font-size: 12px;
       }
 
-      .thumb img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-      }
-
       .editor-card {
         width: min(100%, 620px);
         margin: 0 auto 140px;
       }
     }
 
-    /* 스마트폰 화면 */
     @media (max-width: 759px) {
       .app {
         padding: 10px 8px 72px;
@@ -790,8 +786,6 @@
       <div class="camera-main">
         <div class="camera-left">
           <div id="videoWrap" class="video-wrap">
-            <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
-
             <video
               id="video"
               autoplay
@@ -802,6 +796,9 @@
               controlslist="nodownload nofullscreen noremoteplayback noplaybackrate"
             ></video>
 
+            <div class="video-touch-blocker" id="videoTouchBlocker"></div>
+
+            <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
             <div id="countOverlay" class="count-overlay">3</div>
 
             <div class="shutter-area">
@@ -863,7 +860,7 @@
         </div>
 
         <p class="notice">
-          스마트폰에서 미리보기 가운데 재생/일시정지 버튼이 보이지 않도록 수정했습니다.
+          카메라 화면은 video 원본으로 표시하고, 터치 차단막으로 재생/일시정지 버튼을 막았습니다.
         </p>
       </div>
     </section>
@@ -893,6 +890,7 @@
 
     const video = document.getElementById("video");
     const videoWrap = document.getElementById("videoWrap");
+    const videoTouchBlocker = document.getElementById("videoTouchBlocker");
 
     const captureBtn = document.getElementById("captureBtn");
     const resetBtn = document.getElementById("resetBtn");
@@ -926,21 +924,30 @@
     const bgImage = new Image();
     bgImage.src = "background.png";
 
+    function blockVideoTouchEvents() {
+      const block = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+
+      ["click", "dblclick", "touchstart", "touchmove", "touchend", "pointerdown", "pointerup"].forEach((eventName) => {
+        video.addEventListener(eventName, block, { passive: false });
+        videoTouchBlocker.addEventListener(eventName, block, { passive: false });
+      });
+    }
+
     function preventVideoControls() {
       video.controls = false;
       video.removeAttribute("controls");
+      video.setAttribute("autoplay", "");
+      video.setAttribute("muted", "");
       video.setAttribute("playsinline", "");
       video.setAttribute("webkit-playsinline", "");
-      video.setAttribute("muted", "");
       video.setAttribute("disablepictureinpicture", "");
       video.setAttribute("controlslist", "nodownload nofullscreen noremoteplayback noplaybackrate");
     }
 
     function syncVideoPreviewRatio() {
-      /*
-        PC에서는 무조건 세로형 3:4.
-        스마트폰에서는 카메라 원본 비율.
-      */
       if (window.innerWidth >= 760) {
         videoWrap.style.aspectRatio = "3 / 4";
         return;
@@ -954,6 +961,10 @@
         return;
       }
 
+      /*
+        스마트폰에서는 카메라 원본 비율 그대로 표시합니다.
+        video도 contain이므로 확대/크롭하지 않습니다.
+      */
       videoWrap.style.aspectRatio = `${vw} / ${vh}`;
     }
 
@@ -1202,6 +1213,11 @@
       captureCanvas.height = vh;
 
       capCtx.clearRect(0, 0, vw, vh);
+
+      /*
+        미리보기만 좌우반전입니다.
+        저장되는 사진은 정상 방향입니다.
+      */
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
@@ -1439,6 +1455,7 @@
     window.addEventListener("resize", syncVideoPreviewRatio);
 
     window.addEventListener("load", async () => {
+      blockVideoTouchEvents();
       preventVideoControls();
       renderThumbs();
       updateStatus();
