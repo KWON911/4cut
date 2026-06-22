@@ -5,175 +5,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>행복 네 컷</title>
   <style>
-    * { box-sizing: border-box; }
+    :root {
+      --bg: #f5f7ff;
+      --card: #ffffff;
+      --primary: #5b7cff;
+      --primary-dark: #4668f0;
+      --sub: #eef3ff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #dbe4ff;
+      --shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
-      background: #f2f6ff;
-      color: #1f2937;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Noto Sans KR", "Malgun Gothic", sans-serif;
+      background: linear-gradient(180deg, #eef3ff 0%, #f9fbff 100%);
+      color: var(--text);
     }
+
     .app {
-      width: min(100%, 980px);
+      max-width: 980px;
       margin: 0 auto;
-      padding: 18px 14px 40px;
+      padding: 20px 16px 40px;
     }
+
     h1 {
-      margin: 4px 0 6px;
+      margin: 0 0 8px;
       text-align: center;
-      font-size: clamp(24px, 5vw, 34px);
+      font-size: 28px;
     }
-    .desc {
-      margin: 0 0 16px;
+
+    .subtitle {
+      margin: 0 0 20px;
       text-align: center;
-      color: #64748b;
+      color: var(--muted);
       font-size: 14px;
-      line-height: 1.5;
     }
-    .screen { display: none; }
-    .screen.active { display: block; }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
     .card {
-      background: #fff;
-      border: 1px solid #dbe5f5;
-      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
       padding: 16px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     }
-    .camera-grid {
+
+    .camera-layout {
       display: grid;
-      grid-template-columns: 1.25fr 0.85fr;
+      grid-template-columns: 1.4fr 0.9fr;
       gap: 16px;
       align-items: start;
     }
-    @media (max-width: 820px) {
-      .camera-grid { grid-template-columns: 1fr; }
+
+    @media (max-width: 860px) {
+      .camera-layout {
+        grid-template-columns: 1fr;
+      }
     }
-    .video-box {
+
+    .video-wrap {
       position: relative;
       width: 100%;
-      aspect-ratio: 609 / 740;
-      background: #000;
+      aspect-ratio: 3 / 4;
+      background: #111;
       border-radius: 16px;
       overflow: hidden;
-      border: 1px solid #dbe5f5;
+      border: 1px solid var(--border);
     }
+
     video {
       width: 100%;
       height: 100%;
-      display: block;
       object-fit: cover;
-      background: #000;
+      display: block;
+      background: #111;
     }
-    .badge {
+
+    .guide-badge {
       position: absolute;
-      top: 12px;
       left: 12px;
+      top: 12px;
       z-index: 2;
-      padding: 7px 11px;
-      border-radius: 999px;
       background: rgba(0, 0, 0, 0.55);
       color: #fff;
+      padding: 8px 12px;
+      border-radius: 999px;
       font-size: 13px;
     }
-    .count {
+
+    .count-overlay {
       position: absolute;
       inset: 0;
-      display: none;
-      place-items: center;
       z-index: 3;
-      background: rgba(0, 0, 0, 0.22);
+      display: none;
+      align-items: center;
+      justify-content: center;
       color: #fff;
-      font-size: 88px;
-      font-weight: 900;
-      text-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      font-size: 92px;
+      font-weight: 800;
+      background: rgba(0, 0, 0, 0.18);
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
     }
-    .count.show { display: grid; }
-    .side {
+
+    .count-overlay.show {
+      display: flex;
+    }
+
+    .right-panel {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
-    .panel-title {
-      margin: 0 0 10px;
-      font-size: 17px;
+
+    .mode-buttons {
+      display: grid;
+      gap: 10px;
     }
+
     .btn {
-      width: 100%;
-      border: 0;
+      border: none;
       border-radius: 14px;
-      padding: 14px 15px;
+      padding: 14px 16px;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.12s, opacity 0.12s, background 0.12s;
+      transition: 0.15s ease;
     }
-    .btn:hover { transform: translateY(-1px); }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
     .btn:disabled {
-      opacity: 0.55;
+      opacity: 0.6;
       cursor: not-allowed;
       transform: none;
     }
+
     .btn-mode {
-      margin-bottom: 8px;
-      background: #eef2ff;
-      color: #3349b8;
-      border: 1px solid #dbe3ff;
+      background: var(--sub);
+      color: #3049b7;
+      border: 1px solid #dce4ff;
     }
+
     .btn-mode.active {
-      background: #5b7cff;
-      color: white;
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
     }
+
     .btn-main {
-      background: #5b7cff;
-      color: white;
+      background: var(--primary);
+      color: #fff;
     }
-    .btn-main:hover { background: #4868f0; }
+
+    .btn-main:hover {
+      background: var(--primary-dark);
+    }
+
     .btn-sub {
       background: #eef2f7;
       color: #334155;
-      border: 1px solid #dbe5f5;
+      border: 1px solid var(--border);
     }
-    .info {
-      margin-top: 2px;
-      padding: 13px;
-      border-radius: 14px;
+
+    .status-box {
+      border: 1px dashed #cdd8ee;
       background: #f8fbff;
-      border: 1px dashed #cbd5e1;
-      color: #475569;
+      border-radius: 14px;
+      padding: 14px;
       font-size: 14px;
+      color: #3b4b66;
       line-height: 1.7;
     }
-    .error {
-      display: none;
-      margin-top: 10px;
-      padding: 12px 13px;
-      border-radius: 12px;
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      color: #9f1239;
-      font-size: 14px;
-      line-height: 1.5;
+
+    .status-box strong {
+      color: #1e2f5c;
     }
-    .error.show { display: block; }
+
+    .thumbs-wrap {
+      margin-top: 18px;
+    }
+
     .thumbs-title {
-      margin: 18px 0 10px;
+      margin: 0 0 10px;
       font-size: 16px;
     }
+
     .thumbs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
+
     .thumb {
-      aspect-ratio: 609 / 740;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background: #e9eef8;
+      border: 2px dashed #cdd8ee;
       border-radius: 12px;
       overflow: hidden;
-      background: #edf2fb;
-      border: 2px dashed #cbd5e1;
-      display: grid;
-      place-items: center;
-      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #718198;
       font-size: 13px;
     }
+
     .thumb img {
       width: 100%;
       height: 100%;
@@ -181,191 +235,230 @@
       display: block;
     }
 
-    /* 편집 화면 */
-    .editor-wrap {
+    .error-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+      display: none;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .error-box.show {
+      display: block;
+    }
+
+    .editor-card {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      align-items: center;
+      gap: 18px;
     }
+
     .preview-stage {
       position: relative;
       width: min(100%, 760px);
-      aspect-ratio: 1448 / 2048;
+      margin: 0 auto;
       overflow: hidden;
       border-radius: 28px;
-      background: transparent;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: #dfe8ff;
       isolation: isolate;
     }
-    .photo-layer,
-    .frame-layer {
+
+    .photo-layer {
       position: absolute;
       inset: 0;
-      width: 100%;
-      height: 100%;
-    }
-    .photo-layer { z-index: 1; }
-    .frame-layer {
-      z-index: 2;
-      display: block;
+      z-index: 1;
       pointer-events: none;
-      user-select: none;
-      -webkit-user-drag: none;
     }
+
     .slot {
       position: absolute;
       overflow: hidden;
       background: transparent;
     }
+
     .slot img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      transform: scale(1.08); /* 사진을 조금 키워 검정 여백 방지 */
+      transform-origin: center center;
     }
-    .actions {
+
+    .frame-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 2;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .editor-actions {
       display: flex;
-      gap: 10px;
-      width: min(100%, 760px);
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
     }
-    @media (max-width: 520px) {
-      .actions { flex-direction: column; }
+
+    .notice {
+      margin-top: 4px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.6;
     }
-    canvas { display: none; }
+
+    canvas {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="app">
     <h1>행복 네 컷</h1>
-    <p class="desc">4장의 사진을 촬영하면 배경 프레임에 자동으로 합성됩니다.</p>
+    <p class="subtitle">카메라로 4장을 촬영하고 배경 프레임에 자동 합성해 보세요.</p>
 
+    <!-- 촬영 화면 -->
     <section id="cameraScreen" class="screen active">
       <div class="card">
-        <div class="camera-grid">
+        <div class="camera-layout">
           <div>
-            <div class="video-box">
-              <div id="modeBadge" class="badge">수동 촬영</div>
+            <div class="video-wrap">
+              <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
               <video id="video" autoplay playsinline muted></video>
-              <div id="countOverlay" class="count">3</div>
+              <div id="countOverlay" class="count-overlay">3</div>
             </div>
-            <div id="errorBox" class="error"></div>
+            <div id="errorBox" class="error-box"></div>
           </div>
 
-          <div class="side">
-            <div class="card" style="padding:14px; box-shadow:none;">
-              <h2 class="panel-title">촬영 방식</h2>
-              <button class="btn btn-mode active" data-mode="manual">수동 촬영</button>
-              <button class="btn btn-mode" data-mode="1">1초 자동촬영</button>
-              <button class="btn btn-mode" data-mode="3">3초 자동촬영</button>
+          <div class="right-panel">
+            <div class="card" style="padding:14px;">
+              <h3 style="margin:0 0 12px; font-size:17px;">촬영 방식 선택</h3>
+              <div class="mode-buttons">
+                <button class="btn btn-mode active" data-mode="manual">수동 촬영</button>
+                <button class="btn btn-mode" data-mode="1">1초 자동촬영</button>
+                <button class="btn btn-mode" data-mode="3">3초 자동촬영</button>
+              </div>
             </div>
 
-            <div class="card" style="padding:14px; box-shadow:none;">
-              <h2 class="panel-title">촬영</h2>
-              <button id="captureBtn" class="btn btn-main" style="margin-bottom:8px;">사진 촬영</button>
-              <button id="clearBtn" class="btn btn-sub">촬영 초기화</button>
+            <div class="card" style="padding:14px;">
+              <h3 style="margin:0 0 12px; font-size:17px;">촬영</h3>
+              <button id="captureBtn" class="btn btn-main" style="width:100%; margin-bottom:10px;">
+                사진 촬영
+              </button>
+              <button id="resetBtn" class="btn btn-sub" style="width:100%;">
+                촬영 초기화
+              </button>
             </div>
 
-            <div class="info">
-              현재 촬영 수: <strong><span id="shotCount">0</span> / 4</strong><br />
-              선택 모드: <strong><span id="modeText">수동 촬영</span></strong><br />
-              4장이 촬영되면 자동으로 편집 화면으로 이동합니다.
+            <div class="status-box">
+              <strong>진행 상황</strong><br />
+              현재 촬영 수: <span id="shotCount">0</span> / 4<br />
+              선택 모드: <span id="modeLabel">수동 촬영</span><br />
+              자동촬영은 시작 후 4장이 연속으로 촬영됩니다.
             </div>
           </div>
         </div>
 
-        <h2 class="thumbs-title">촬영된 사진</h2>
-        <div id="thumbs" class="thumbs"></div>
+        <div class="thumbs-wrap">
+          <h3 class="thumbs-title">촬영된 사진</h3>
+          <div id="thumbs" class="thumbs">
+            <div class="thumb">1번</div>
+            <div class="thumb">2번</div>
+            <div class="thumb">3번</div>
+            <div class="thumb">4번</div>
+          </div>
+        </div>
       </div>
     </section>
 
+    <!-- 편집 화면 -->
     <section id="editorScreen" class="screen">
-      <div class="card editor-wrap">
-        <div id="previewStage" class="preview-stage">
+      <div class="card editor-card">
+        <div id="previewStage" class="preview-stage" aria-label="행복 네 컷 미리보기">
           <div id="photoLayer" class="photo-layer"></div>
-          <img id="frameLayer" class="frame-layer" src="background.png" alt="행복 네 컷 배경" />
+          <img id="frameLayer" class="frame-layer" src="background.png" alt="행복 네 컷 배경 프레임" />
         </div>
 
-        <div class="actions">
+        <div class="editor-actions">
           <button id="downloadBtn" class="btn btn-main">이미지 다운로드</button>
           <button id="retakeBtn" class="btn btn-sub">다시 촬영</button>
         </div>
+
+        <p class="notice">
+          사진은 프레임보다 약간 크게 배치되어, 슬롯 가장자리의 검정 여백이 보이지 않도록 처리됩니다.
+        </p>
       </div>
     </section>
+
+    <canvas id="captureCanvas"></canvas>
   </div>
 
-  <canvas id="captureCanvas"></canvas>
-
   <script>
-    /************************************************************
-     * 핵심 수정 사항
-     * 기존 좌표는 실제 투명 슬롯보다 오른쪽/위쪽으로 어긋나서
-     * 왼쪽에 검정 여백이 보였습니다.
-     * 아래 좌표는 background.png의 실제 투명 구멍을 기준으로 다시 측정한 값입니다.
-     ************************************************************/
-
-    // 기준 배경 크기: 현재 background.png 원본 크기
+    /*********************************************************
+     * 실제 배경 이미지 기준 슬롯 좌표(픽셀)
+     * 이전 비율 좌표보다 실제 슬롯 위치에 더 맞춘 값
+     *********************************************************/
     const BASE_W = 1448;
     const BASE_H = 2048;
 
-    // 실제 투명 슬롯 위치. 단위: px, 순서: 왼쪽 위, 왼쪽 아래, 오른쪽 위, 오른쪽 아래
     const RAW_SLOTS = [
-      { x: 81,  y: 450,  w: 609, h: 740 },
-      { x: 80,  y: 1226, w: 606, h: 743 },
-      { x: 770, y: 91,   w: 609, h: 740 },
-      { x: 769, y: 863,  w: 609, h: 742 },
+      { x: 81,  y: 450,  w: 609, h: 740 }, // 왼쪽 위
+      { x: 80,  y: 1226, w: 606, h: 743 }, // 왼쪽 아래
+      { x: 770, y: 91,   w: 609, h: 740 }, // 오른쪽 위
+      { x: 769, y: 863,  w: 609, h: 742 }, // 오른쪽 아래
     ];
 
-    // 슬롯보다 사진을 조금 더 크게 깔아 배경이 마스크처럼 덮게 합니다.
-    // 이렇게 하면 1~2px 오차나 반투명 가장자리 때문에 검정 여백이 생기지 않습니다.
-    const OVERFILL_PX = 10;
+    // 다운로드용 사진 확대 비율
+    const OVERFILL_RATIO = 0.10; // 10% 확대
+
+    const SLOT_CONFIG = RAW_SLOTS.map(slot => ({
+      x: slot.x / BASE_W,
+      y: slot.y / BASE_H,
+      w: slot.w / BASE_W,
+      h: slot.h / BASE_H
+    }));
 
     const video = document.getElementById("video");
     const captureBtn = document.getElementById("captureBtn");
-    const clearBtn = document.getElementById("clearBtn");
+    const resetBtn = document.getElementById("resetBtn");
     const retakeBtn = document.getElementById("retakeBtn");
     const downloadBtn = document.getElementById("downloadBtn");
-    const modeButtons = document.querySelectorAll(".btn-mode");
-    const modeBadge = document.getElementById("modeBadge");
-    const modeText = document.getElementById("modeText");
-    const shotCount = document.getElementById("shotCount");
+    const shotCountEl = document.getElementById("shotCount");
+    const modeLabelEl = document.getElementById("modeLabel");
+    const guideText = document.getElementById("guideText");
     const thumbs = document.getElementById("thumbs");
     const countOverlay = document.getElementById("countOverlay");
     const errorBox = document.getElementById("errorBox");
+
     const cameraScreen = document.getElementById("cameraScreen");
     const editorScreen = document.getElementById("editorScreen");
     const previewStage = document.getElementById("previewStage");
     const photoLayer = document.getElementById("photoLayer");
     const frameLayer = document.getElementById("frameLayer");
+
     const captureCanvas = document.getElementById("captureCanvas");
     const capCtx = captureCanvas.getContext("2d");
 
-    const bgImage = new Image();
-    bgImage.src = "background.png";
+    const modeButtons = document.querySelectorAll(".btn-mode");
 
     let stream = null;
     let shots = [];
-    let currentMode = "manual";
+    let currentMode = "manual"; // manual, 1, 3
     let isCapturing = false;
 
-    function getSlotWithOverfill(slot) {
-      return {
-        x: slot.x - OVERFILL_PX,
-        y: slot.y - OVERFILL_PX,
-        w: slot.w + OVERFILL_PX * 2,
-        h: slot.h + OVERFILL_PX * 2,
-      };
-    }
-
-    function slotToPercent(slot) {
-      const s = getSlotWithOverfill(slot);
-      return {
-        left: (s.x / BASE_W) * 100,
-        top: (s.y / BASE_H) * 100,
-        width: (s.w / BASE_W) * 100,
-        height: (s.h / BASE_H) * 100,
-      };
-    }
+    const bgImage = new Image();
+    bgImage.src = "background.png";
 
     function showError(message) {
       errorBox.textContent = message;
@@ -377,15 +470,18 @@
       errorBox.classList.remove("show");
     }
 
-    function modeLabel() {
-      return currentMode === "manual" ? "수동 촬영" : `${currentMode}초 자동촬영`;
-    }
+    function updateStatus() {
+      shotCountEl.textContent = shots.length;
 
-    function updateUI() {
-      shotCount.textContent = shots.length;
-      modeBadge.textContent = modeLabel();
-      modeText.textContent = modeLabel();
+      const modeText =
+        currentMode === "manual"
+          ? "수동 촬영"
+          : `${currentMode}초 자동촬영`;
+
+      modeLabelEl.textContent = modeText;
+      guideText.textContent = `촬영 모드: ${modeText}`;
       captureBtn.textContent = currentMode === "manual" ? "사진 촬영" : "자동촬영 시작";
+
       renderThumbs();
     }
 
@@ -394,37 +490,26 @@
       for (let i = 0; i < 4; i++) {
         const box = document.createElement("div");
         box.className = "thumb";
+
         if (shots[i]) {
           const img = document.createElement("img");
           img.src = shots[i];
-          img.alt = `${i + 1}번 사진`;
+          img.alt = `${i + 1}번 촬영 사진`;
           box.appendChild(img);
         } else {
           box.textContent = `${i + 1}번`;
         }
+
         thumbs.appendChild(box);
       }
     }
 
-    async function startCamera() {
-      hideError();
-      stopCamera();
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 1280 },
-            height: { ideal: 1600 },
-            aspectRatio: { ideal: 609 / 740 },
-          },
-          audio: false,
-        });
-        video.srcObject = stream;
-        await video.play();
-      } catch (err) {
-        console.error(err);
-        showError("카메라를 사용할 수 없습니다. 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages처럼 HTTPS 환경에서 실행하는 것이 좋습니다.");
-      }
+    function setMode(mode) {
+      currentMode = mode;
+      modeButtons.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === mode);
+      });
+      updateStatus();
     }
 
     function stopCamera() {
@@ -434,19 +519,34 @@
       }
     }
 
-    function setMode(mode) {
-      if (isCapturing) return;
-      currentMode = mode;
-      modeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
-      updateUI();
+    async function startCamera() {
+      hideError();
+      stopCamera();
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1080 },
+            height: { ideal: 1440 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        await video.play();
+      } catch (err) {
+        console.error(err);
+        showError("카메라를 사용할 수 없습니다. 브라우저 카메라 권한을 허용했는지 확인해 주세요. GitHub Pages 또는 HTTPS 환경에서 실행하는 것이 좋습니다.");
+      }
     }
 
     function wait(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async function countdown(sec) {
-      for (let i = sec; i >= 1; i--) {
+    async function showCountdown(seconds) {
+      for (let i = seconds; i >= 1; i--) {
         countOverlay.textContent = i;
         countOverlay.classList.add("show");
         await wait(1000);
@@ -460,91 +560,27 @@
         return null;
       }
 
-      // 슬롯 비율과 같은 사진으로 저장합니다.
-      // 기존처럼 카메라 원본 전체를 그대로 저장하면 기기 회전/비율 차이로 검정 여백이 들어갈 수 있습니다.
-      const targetW = 900;
-      const targetH = Math.round(targetW * 740 / 609);
-      captureCanvas.width = targetW;
-      captureCanvas.height = targetH;
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
 
-      drawVideoCover(capCtx, video, targetW, targetH);
+      captureCanvas.width = vw;
+      captureCanvas.height = vh;
+      capCtx.clearRect(0, 0, vw, vh);
+      capCtx.drawImage(video, 0, 0, vw, vh);
+
       return captureCanvas.toDataURL("image/png");
     }
 
-    // video를 object-fit: cover처럼 캔버스에 꽉 채워 그립니다.
-    function drawVideoCover(ctx, sourceVideo, destW, destH) {
-      const sourceW = sourceVideo.videoWidth;
-      const sourceH = sourceVideo.videoHeight;
-      const sourceRatio = sourceW / sourceH;
-      const destRatio = destW / destH;
-
-      let sx, sy, sw, sh;
-      if (sourceRatio > destRatio) {
-        sh = sourceH;
-        sw = sh * destRatio;
-        sx = (sourceW - sw) / 2;
-        sy = 0;
-      } else {
-        sw = sourceW;
-        sh = sw / destRatio;
-        sx = 0;
-        sy = (sourceH - sh) / 2;
-      }
-
-      ctx.clearRect(0, 0, destW, destH);
-      ctx.drawImage(sourceVideo, sx, sy, sw, sh, 0, 0, destW, destH);
-    }
-
-    async function handleCapture() {
-      if (isCapturing || shots.length >= 4) return;
-      const photo = capturePhoto();
-      if (!photo) return;
-      shots.push(photo);
-      updateUI();
-      if (shots.length === 4) openEditor();
-    }
-
-    async function handleAutoCapture(intervalSec) {
-      if (isCapturing || shots.length >= 4) return;
-      isCapturing = true;
-      captureBtn.disabled = true;
-      clearBtn.disabled = true;
-      modeButtons.forEach(btn => btn.disabled = true);
-
-      try {
-        while (shots.length < 4) {
-          await countdown(intervalSec);
-          const photo = capturePhoto();
-          if (!photo) break;
-          shots.push(photo);
-          updateUI();
-        }
-        if (shots.length === 4) openEditor();
-      } finally {
-        isCapturing = false;
-        captureBtn.disabled = false;
-        clearBtn.disabled = false;
-        modeButtons.forEach(btn => btn.disabled = false);
-        countOverlay.classList.remove("show");
-      }
-    }
-
-    function openEditor() {
+    function switchToEditor() {
       cameraScreen.classList.remove("active");
       editorScreen.classList.add("active");
-      stopCamera();
       buildPreview();
     }
 
-    function openCamera() {
+    function switchToCamera() {
       editorScreen.classList.remove("active");
       cameraScreen.classList.add("active");
       startCamera();
-    }
-
-    function resetShots() {
-      shots = [];
-      updateUI();
     }
 
     function buildPreview() {
@@ -554,21 +590,70 @@
         previewStage.style.aspectRatio = `${bgImage.naturalWidth} / ${bgImage.naturalHeight}`;
       }
 
-      RAW_SLOTS.forEach((slot, index) => {
-        const p = slotToPercent(slot);
-        const box = document.createElement("div");
-        box.className = "slot";
-        box.style.left = `${p.left}%`;
-        box.style.top = `${p.top}%`;
-        box.style.width = `${p.width}%`;
-        box.style.height = `${p.height}%`;
+      SLOT_CONFIG.forEach((slot, index) => {
+        const slotBox = document.createElement("div");
+        slotBox.className = "slot";
+        slotBox.style.left = `${slot.x * 100}%`;
+        slotBox.style.top = `${slot.y * 100}%`;
+        slotBox.style.width = `${slot.w * 100}%`;
+        slotBox.style.height = `${slot.h * 100}%`;
 
         const img = document.createElement("img");
         img.src = shots[index];
-        img.alt = `${index + 1}번 사진`;
-        box.appendChild(img);
-        photoLayer.appendChild(box);
+        img.alt = `촬영 사진 ${index + 1}`;
+        slotBox.appendChild(img);
+        photoLayer.appendChild(slotBox);
       });
+    }
+
+    function resetShots() {
+      shots = [];
+      updateStatus();
+    }
+
+    async function handleManualCapture() {
+      if (isCapturing || shots.length >= 4) return;
+
+      const photo = capturePhoto();
+      if (!photo) return;
+
+      shots.push(photo);
+      updateStatus();
+
+      if (shots.length === 4) {
+        switchToEditor();
+      }
+    }
+
+    async function handleAutoCapture(intervalSec) {
+      if (isCapturing || shots.length >= 4) return;
+
+      isCapturing = true;
+      captureBtn.disabled = true;
+      resetBtn.disabled = true;
+
+      try {
+        while (shots.length < 4) {
+          await showCountdown(intervalSec);
+
+          const photo = capturePhoto();
+          if (!photo) break;
+
+          shots.push(photo);
+          updateStatus();
+
+          if (shots.length >= 4) break;
+        }
+
+        if (shots.length === 4) {
+          switchToEditor();
+        }
+      } finally {
+        isCapturing = false;
+        captureBtn.disabled = false;
+        resetBtn.disabled = false;
+        countOverlay.classList.remove("show");
+      }
     }
 
     function loadImage(src) {
@@ -583,6 +668,7 @@
     function drawImageCover(ctx, img, x, y, w, h) {
       const imgRatio = img.width / img.height;
       const boxRatio = w / h;
+
       let sx, sy, sw, sh;
 
       if (imgRatio > boxRatio) {
@@ -596,49 +682,11 @@
         sx = 0;
         sy = (img.height - sh) / 2;
       }
+
       ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     }
 
-    async function downloadImage() {
-      if (!bgImage.complete || !bgImage.naturalWidth) {
-        alert("background.png를 아직 불러오지 못했습니다.");
-        return;
-      }
-
-      const finalCanvas = document.createElement("canvas");
-      finalCanvas.width = bgImage.naturalWidth;
-      finalCanvas.height = bgImage.naturalHeight;
-      const ctx = finalCanvas.getContext("2d");
-
-      const scaleX = bgImage.naturalWidth / BASE_W;
-      const scaleY = bgImage.naturalHeight / BASE_H;
-
-      // 1. 사진을 먼저 그립니다. 프레임보다 살짝 크게 그려 검정 틈을 없앱니다.
-      for (let i = 0; i < RAW_SLOTS.length; i++) {
-        const src = shots[i];
-        if (!src) continue;
-        const img = await loadImage(src);
-        const s = getSlotWithOverfill(RAW_SLOTS[i]);
-        drawImageCover(
-          ctx,
-          img,
-          s.x * scaleX,
-          s.y * scaleY,
-          s.w * scaleX,
-          s.h * scaleY
-        );
-      }
-
-      // 2. 배경 프레임을 위에 덮어 투명 슬롯으로만 사진이 보이게 합니다.
-      ctx.drawImage(bgImage, 0, 0, finalCanvas.width, finalCanvas.height);
-
-      const link = document.createElement("a");
-      link.href = finalCanvas.toDataURL("image/png");
-      link.download = `행복네컷_${timestamp()}.png`;
-      link.click();
-    }
-
-    function timestamp() {
+    function getTimestampForFileName() {
       const now = new Date();
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -649,41 +697,107 @@
       return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
     }
 
-    modeButtons.forEach(btn => {
-      btn.addEventListener("click", () => setMode(btn.dataset.mode));
+    async function downloadComposite() {
+      if (!bgImage.complete || !bgImage.naturalWidth || !bgImage.naturalHeight) {
+        alert("배경 이미지를 아직 불러오지 못했습니다.");
+        return;
+      }
+
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = bgImage.naturalWidth;
+      finalCanvas.height = bgImage.naturalHeight;
+      const ctx = finalCanvas.getContext("2d");
+
+      for (let i = 0; i < SLOT_CONFIG.length; i++) {
+        const slot = SLOT_CONFIG[i];
+        const src = shots[i];
+        if (!src) continue;
+
+        const img = await loadImage(src);
+
+        const x = slot.x * finalCanvas.width;
+        const y = slot.y * finalCanvas.height;
+        const w = slot.w * finalCanvas.width;
+        const h = slot.h * finalCanvas.height;
+
+        // 사진을 슬롯보다 조금 크게 그려 검정 여백 방지
+        const extraW = w * OVERFILL_RATIO;
+        const extraH = h * OVERFILL_RATIO;
+
+        drawImageCover(
+          ctx,
+          img,
+          x - extraW / 2,
+          y - extraH / 2,
+          w + extraW,
+          h + extraH
+        );
+      }
+
+      // 배경 프레임을 마지막에 그려서 사진 위에 덮음
+      ctx.drawImage(bgImage, 0, 0, finalCanvas.width, finalCanvas.height);
+
+      const link = document.createElement("a");
+      link.href = finalCanvas.toDataURL("image/png");
+      link.download = `행복네컷_${getTimestampForFileName()}.png`;
+      link.click();
+    }
+
+    modeButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (isCapturing) return;
+        setMode(btn.dataset.mode);
+      });
     });
 
-    captureBtn.addEventListener("click", () => {
+    captureBtn.addEventListener("click", async () => {
       hideError();
-      if (currentMode === "manual") handleCapture();
-      else handleAutoCapture(Number(currentMode));
+
+      if (shots.length >= 4) {
+        alert("이미 4장의 사진이 촬영되었습니다. 다시 촬영하려면 초기화해 주세요.");
+        return;
+      }
+
+      if (currentMode === "manual") {
+        handleManualCapture();
+      } else {
+        handleAutoCapture(Number(currentMode));
+      }
     });
 
-    clearBtn.addEventListener("click", () => {
-      if (!isCapturing) resetShots();
+    resetBtn.addEventListener("click", () => {
+      if (isCapturing) return;
+      resetShots();
     });
 
     retakeBtn.addEventListener("click", () => {
       resetShots();
-      openCamera();
+      switchToCamera();
     });
 
-    downloadBtn.addEventListener("click", downloadImage);
+    downloadBtn.addEventListener("click", downloadComposite);
 
     bgImage.onload = () => {
-      previewStage.style.aspectRatio = `${bgImage.naturalWidth} / ${bgImage.naturalHeight}`;
+      if (bgImage.naturalWidth && bgImage.naturalHeight) {
+        previewStage.style.aspectRatio = `${bgImage.naturalWidth} / ${bgImage.naturalHeight}`;
+      }
     };
 
-    window.addEventListener("load", () => {
-      updateUI();
+    window.addEventListener("load", async () => {
+      renderThumbs();
+      updateStatus();
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         showError("이 브라우저는 카메라 기능을 지원하지 않습니다.");
         return;
       }
-      startCamera();
+
+      await startCamera();
     });
 
-    window.addEventListener("beforeunload", stopCamera);
+    window.addEventListener("beforeunload", () => {
+      stopCamera();
+    });
   </script>
 </body>
 </html>
