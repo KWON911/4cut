@@ -22,8 +22,10 @@
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
+      min-height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
         "Noto Sans KR", "Malgun Gothic", sans-serif;
       background:
@@ -31,11 +33,10 @@
         radial-gradient(circle at bottom right, rgba(255, 79, 163, 0.16), transparent 34%),
         linear-gradient(180deg, #080b16 0%, #101426 52%, #080b16 100%);
       color: var(--text);
-      min-height: 100vh;
     }
 
     .app {
-      max-width: 980px;
+      max-width: 1220px;
       margin: 0 auto;
       padding: 16px 12px 40px;
     }
@@ -175,6 +176,13 @@
     .camera-main {
       width: min(100%, 760px);
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .camera-left,
+    .camera-right {
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -512,6 +520,145 @@
       display: none;
     }
 
+    /* PC 화면: 한눈에 보이도록 2단 배치 */
+    @media (min-width: 861px) {
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .app {
+        height: 100dvh;
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .title-hero {
+        width: 100%;
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 12px 16px 14px;
+        border-radius: 22px;
+        flex: 0 0 auto;
+      }
+
+      .title-hero::before {
+        inset: 6px;
+        border-radius: 17px;
+      }
+
+      .title-hero::after {
+        display: none;
+      }
+
+      .title-badge {
+        margin-bottom: 4px;
+        padding: 5px 12px;
+        font-size: 13px;
+      }
+
+      .fancy-title {
+        font-size: clamp(28px, 3vw, 42px);
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        font-size: 13px;
+      }
+
+      .sparkle {
+        font-size: 24px;
+      }
+
+      .camera-main {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        max-width: 1220px;
+        display: grid;
+        grid-template-columns: 430px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .camera-left {
+        min-height: 0;
+      }
+
+      .camera-right {
+        min-height: 0;
+        max-height: calc(100dvh - 132px);
+        overflow: hidden;
+        gap: 10px;
+      }
+
+      .video-wrap {
+        width: 100%;
+        max-height: calc(100dvh - 132px);
+        aspect-ratio: 3 / 4;
+        border-radius: 18px;
+      }
+
+      .shutter-area {
+        bottom: 18px;
+      }
+
+      .shutter-btn {
+        width: 78px;
+        height: 78px;
+        border-width: 8px;
+        box-shadow:
+          0 8px 20px rgba(0, 0, 0, 0.5),
+          0 0 0 6px rgba(0, 0, 0, 0.24),
+          inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .capture-card h3,
+      .mode-card h3,
+      .thumbs-title {
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+
+      .reset-btn {
+        padding: 13px 12px;
+        font-size: 15px;
+      }
+
+      .btn {
+        padding: 12px 12px;
+        font-size: 14px;
+      }
+
+      .status-box {
+        padding: 12px;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .thumbs {
+        gap: 8px;
+      }
+
+      .thumb {
+        aspect-ratio: 4 / 3;
+        font-size: 12px;
+      }
+
+      .error-box {
+        font-size: 13px;
+        padding: 10px 12px;
+      }
+    }
+
+    /* 모바일 화면: 세로 배치 */
     @media (max-width: 860px) {
       .app {
         padding: 10px 8px 32px;
@@ -625,49 +772,53 @@
 
     <section id="cameraScreen" class="screen active">
       <div class="camera-main">
-        <div class="video-wrap">
-          <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
-          <video id="video" autoplay playsinline muted></video>
-          <div id="countOverlay" class="count-overlay">3</div>
+        <div class="camera-left">
+          <div class="video-wrap">
+            <div class="guide-badge" id="guideText">촬영 모드: 수동 촬영</div>
+            <video id="video" autoplay playsinline muted></video>
+            <div id="countOverlay" class="count-overlay">3</div>
 
-          <div class="shutter-area">
-            <button id="captureBtn" class="shutter-btn" aria-label="사진 촬영" title="사진 촬영"></button>
+            <div class="shutter-area">
+              <button id="captureBtn" class="shutter-btn" aria-label="사진 촬영" title="사진 촬영"></button>
+            </div>
           </div>
+
+          <div id="errorBox" class="error-box"></div>
         </div>
 
-        <div id="errorBox" class="error-box"></div>
-
-        <div class="card capture-card">
-          <h3>촬영</h3>
-          <div class="reset-only-row">
-            <button id="resetBtn" class="btn btn-sub reset-btn">촬영 초기화</button>
-            <div class="shot-mini"><span id="shotMiniCount">0</span>/4</div>
+        <div class="camera-right">
+          <div class="card capture-card">
+            <h3>촬영</h3>
+            <div class="reset-only-row">
+              <button id="resetBtn" class="btn btn-sub reset-btn">촬영 초기화</button>
+              <div class="shot-mini"><span id="shotMiniCount">0</span>/4</div>
+            </div>
           </div>
-        </div>
 
-        <div class="card mode-card">
-          <h3>촬영 방식 선택</h3>
-          <div class="mode-buttons">
-            <button class="btn btn-mode active" data-mode="manual">수동 촬영</button>
-            <button class="btn btn-mode" data-mode="1">1초 자동촬영</button>
-            <button class="btn btn-mode" data-mode="3">3초 자동촬영</button>
+          <div class="card mode-card">
+            <h3>촬영 방식 선택</h3>
+            <div class="mode-buttons">
+              <button class="btn btn-mode active" data-mode="manual">수동 촬영</button>
+              <button class="btn btn-mode" data-mode="1">1초 자동촬영</button>
+              <button class="btn btn-mode" data-mode="3">3초 자동촬영</button>
+            </div>
           </div>
-        </div>
 
-        <div class="status-box">
-          <strong>진행 상황</strong><br />
-          현재 촬영 수: <span id="shotCount">0</span> / 4<br />
-          선택 모드: <span id="modeLabel">수동 촬영</span><br />
-          자동촬영은 빨간 촬영 버튼을 누르면 시작됩니다.
-        </div>
+          <div class="status-box">
+            <strong>진행 상황</strong><br />
+            현재 촬영 수: <span id="shotCount">0</span> / 4<br />
+            선택 모드: <span id="modeLabel">수동 촬영</span><br />
+            자동촬영은 빨간 촬영 버튼을 누르면 시작됩니다.
+          </div>
 
-        <div class="card thumbs-wrap">
-          <h3 class="thumbs-title">촬영된 사진</h3>
-          <div id="thumbs" class="thumbs">
-            <div class="thumb">1번</div>
-            <div class="thumb">2번</div>
-            <div class="thumb">3번</div>
-            <div class="thumb">4번</div>
+          <div class="card thumbs-wrap">
+            <h3 class="thumbs-title">촬영된 사진</h3>
+            <div id="thumbs" class="thumbs">
+              <div class="thumb">1번</div>
+              <div class="thumb">2번</div>
+              <div class="thumb">3번</div>
+              <div class="thumb">4번</div>
+            </div>
           </div>
         </div>
       </div>
@@ -961,10 +1112,6 @@
 
       capCtx.clearRect(0, 0, vw, vh);
 
-      /*
-        미리보기 video만 CSS로 좌우반전되어 보입니다.
-        캔버스에는 원본 영상을 그대로 그리므로 저장 결과물은 정상 방향입니다.
-      */
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
