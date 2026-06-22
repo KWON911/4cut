@@ -7,7 +7,6 @@
 
   <style>
     :root {
-      --bg: #f5f7ff;
       --card: #ffffff;
       --primary: #5b7cff;
       --primary-dark: #4668f0;
@@ -71,12 +70,6 @@
       grid-template-columns: 1.4fr 0.9fr;
       gap: 16px;
       align-items: start;
-    }
-
-    @media (max-width: 860px) {
-      .camera-layout {
-        grid-template-columns: 1fr;
-      }
     }
 
     .video-wrap {
@@ -154,7 +147,7 @@
     }
 
     .btn:disabled {
-      opacity: 0.6;
+      opacity: 0.55;
       cursor: not-allowed;
       transform: none;
     }
@@ -184,6 +177,16 @@
       background: #eef2f7;
       color: #334155;
       border: 1px solid var(--border);
+    }
+
+    .capture-card {
+      border: 2px solid #c9d6ff;
+    }
+
+    .capture-card .btn-main {
+      font-size: 18px;
+      padding: 18px 16px;
+      border-radius: 18px;
     }
 
     .status-box {
@@ -322,10 +325,111 @@
     canvas {
       display: none;
     }
+
+    .mobile-sticky-actions {
+      display: none;
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        padding: 12px 10px calc(132px + env(safe-area-inset-bottom));
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .camera-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .video-wrap {
+        height: min(58svh, 520px);
+        aspect-ratio: auto;
+        border-radius: 18px;
+      }
+
+      .right-panel {
+        gap: 14px;
+      }
+
+      .capture-card {
+        order: 1;
+      }
+
+      .mode-card {
+        order: 2;
+      }
+
+      .status-box {
+        order: 3;
+      }
+
+      .capture-card .btn-main {
+        font-size: 20px;
+        padding: 20px 16px;
+      }
+
+      .mobile-sticky-actions {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        z-index: 999;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid #dbe4ff;
+        box-shadow: 0 12px 36px rgba(31, 41, 55, 0.22);
+        backdrop-filter: blur(12px);
+      }
+
+      body.camera-active .mobile-sticky-actions {
+        display: flex;
+      }
+
+      body.editor-active .mobile-sticky-actions {
+        display: none;
+      }
+
+      .mobile-main-btn {
+        flex: 1;
+        font-size: 19px;
+        padding: 18px 14px;
+        border-radius: 18px;
+      }
+
+      .mobile-reset-btn {
+        width: 88px;
+        padding: 18px 10px;
+        border-radius: 18px;
+      }
+
+      .mobile-count {
+        min-width: 46px;
+        text-align: center;
+        font-weight: 800;
+        color: #26355f;
+      }
+
+      .thumbs {
+        gap: 8px;
+      }
+    }
   </style>
 </head>
 
-<body>
+<body class="camera-active">
   <div class="app">
     <h1>행복 네 컷</h1>
     <p class="subtitle">카메라로 4장을 촬영하고 배경 프레임에 자동 합성해 보세요.</p>
@@ -343,16 +447,7 @@
           </div>
 
           <div class="right-panel">
-            <div class="card" style="padding:14px;">
-              <h3 style="margin:0 0 12px; font-size:17px;">촬영 방식 선택</h3>
-              <div class="mode-buttons">
-                <button class="btn btn-mode active" data-mode="manual">수동 촬영</button>
-                <button class="btn btn-mode" data-mode="1">1초 자동촬영</button>
-                <button class="btn btn-mode" data-mode="3">3초 자동촬영</button>
-              </div>
-            </div>
-
-            <div class="card" style="padding:14px;">
+            <div class="card capture-card" style="padding:14px;">
               <h3 style="margin:0 0 12px; font-size:17px;">촬영</h3>
               <button id="captureBtn" class="btn btn-main" style="width:100%; margin-bottom:10px;">
                 사진 촬영
@@ -360,6 +455,15 @@
               <button id="resetBtn" class="btn btn-sub" style="width:100%;">
                 촬영 초기화
               </button>
+            </div>
+
+            <div class="card mode-card" style="padding:14px;">
+              <h3 style="margin:0 0 12px; font-size:17px;">촬영 방식 선택</h3>
+              <div class="mode-buttons">
+                <button class="btn btn-mode active" data-mode="manual">수동 촬영</button>
+                <button class="btn btn-mode" data-mode="1">1초 자동촬영</button>
+                <button class="btn btn-mode" data-mode="3">3초 자동촬영</button>
+              </div>
             </div>
 
             <div class="status-box">
@@ -404,10 +508,13 @@
     <canvas id="captureCanvas"></canvas>
   </div>
 
+  <div id="mobileStickyActions" class="mobile-sticky-actions">
+    <button id="mobileCaptureBtn" class="btn btn-main mobile-main-btn">사진 촬영</button>
+    <button id="mobileResetBtn" class="btn btn-sub mobile-reset-btn">초기화</button>
+    <div class="mobile-count"><span id="mobileShotCount">0</span>/4</div>
+  </div>
+
   <script>
-    /*********************************************************
-     * 실제 배경 이미지 기준 슬롯 좌표
-     *********************************************************/
     const BASE_W = 1448;
     const BASE_H = 2048;
 
@@ -430,6 +537,10 @@
     const video = document.getElementById("video");
     const captureBtn = document.getElementById("captureBtn");
     const resetBtn = document.getElementById("resetBtn");
+    const mobileCaptureBtn = document.getElementById("mobileCaptureBtn");
+    const mobileResetBtn = document.getElementById("mobileResetBtn");
+    const mobileShotCount = document.getElementById("mobileShotCount");
+
     const retakeBtn = document.getElementById("retakeBtn");
     const downloadBtn = document.getElementById("downloadBtn");
     const shotCountEl = document.getElementById("shotCount");
@@ -458,10 +569,6 @@
     const bgImage = new Image();
     bgImage.src = "background.png";
 
-    /*********************************************************
-     * 셔터 소리
-     * 별도 mp3 파일 없이 Web Audio API로 찰칵 소리 생성
-     *********************************************************/
     function unlockAudio() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -540,17 +647,31 @@
 
     function updateStatus() {
       shotCountEl.textContent = shots.length;
+      mobileShotCount.textContent = shots.length;
 
       const modeText =
         currentMode === "manual"
           ? "수동 촬영"
           : `${currentMode}초 자동촬영`;
 
+      const captureText =
+        currentMode === "manual"
+          ? "사진 촬영"
+          : `${currentMode}초 자동촬영 시작`;
+
       modeLabelEl.textContent = modeText;
       guideText.textContent = `촬영 모드: ${modeText}`;
-      captureBtn.textContent = currentMode === "manual" ? "사진 촬영" : "자동촬영 시작";
+      captureBtn.textContent = captureText;
+      mobileCaptureBtn.textContent = captureText;
 
       renderThumbs();
+    }
+
+    function setButtonsDisabled(disabled) {
+      captureBtn.disabled = disabled;
+      resetBtn.disabled = disabled;
+      mobileCaptureBtn.disabled = disabled;
+      mobileResetBtn.disabled = disabled;
     }
 
     function renderThumbs() {
@@ -651,12 +772,20 @@
     function switchToEditor() {
       cameraScreen.classList.remove("active");
       editorScreen.classList.add("active");
+
+      document.body.classList.remove("camera-active");
+      document.body.classList.add("editor-active");
+
       buildPreview();
     }
 
     function switchToCamera() {
       editorScreen.classList.remove("active");
       cameraScreen.classList.add("active");
+
+      document.body.classList.remove("editor-active");
+      document.body.classList.add("camera-active");
+
       startCamera();
     }
 
@@ -708,8 +837,7 @@
       if (isCapturing || shots.length >= 4) return;
 
       isCapturing = true;
-      captureBtn.disabled = true;
-      resetBtn.disabled = true;
+      setButtonsDisabled(true);
 
       try {
         while (shots.length < 4) {
@@ -729,9 +857,24 @@
         }
       } finally {
         isCapturing = false;
-        captureBtn.disabled = false;
-        resetBtn.disabled = false;
+        setButtonsDisabled(false);
         countOverlay.classList.remove("show");
+      }
+    }
+
+    async function handleCaptureClick() {
+      unlockAudio();
+      hideError();
+
+      if (shots.length >= 4) {
+        alert("이미 4장의 사진이 촬영되었습니다. 다시 촬영하려면 초기화해 주세요.");
+        return;
+      }
+
+      if (currentMode === "manual") {
+        await handleManualCapture();
+      } else {
+        await handleAutoCapture(Number(currentMode));
       }
     }
 
@@ -831,23 +974,15 @@
       });
     });
 
-    captureBtn.addEventListener("click", async () => {
-      unlockAudio();
-      hideError();
-
-      if (shots.length >= 4) {
-        alert("이미 4장의 사진이 촬영되었습니다. 다시 촬영하려면 초기화해 주세요.");
-        return;
-      }
-
-      if (currentMode === "manual") {
-        handleManualCapture();
-      } else {
-        handleAutoCapture(Number(currentMode));
-      }
-    });
+    captureBtn.addEventListener("click", handleCaptureClick);
+    mobileCaptureBtn.addEventListener("click", handleCaptureClick);
 
     resetBtn.addEventListener("click", () => {
+      if (isCapturing) return;
+      resetShots();
+    });
+
+    mobileResetBtn.addEventListener("click", () => {
       if (isCapturing) return;
       resetShots();
     });
