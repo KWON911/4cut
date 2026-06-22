@@ -157,6 +157,7 @@
       0%, 100% {
         transform: translateY(0) rotate(0deg) scale(1);
       }
+
       50% {
         transform: translateY(-8px) rotate(8deg) scale(1.12);
       }
@@ -401,7 +402,7 @@
 
     .thumb {
       width: 100%;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 3 / 4 !important;
       background: #202842;
       border: 2px dashed #46537c;
       border-radius: 12px;
@@ -490,7 +491,6 @@
       -webkit-user-drag: none;
     }
 
-    /* 결과 화면 버튼 항상 보이게 */
     .editor-actions {
       position: sticky;
       bottom: 12px;
@@ -582,9 +582,16 @@
         overflow: visible;
       }
 
+      /* 핵심: PC 미리보기는 항상 세로형 */
       .video-wrap {
         width: 100%;
+        aspect-ratio: 3 / 4 !important;
         border-radius: 18px;
+      }
+
+      /* PC에서는 세로 틀을 꽉 채우도록 표시 */
+      video {
+        object-fit: cover;
       }
 
       .shutter-area {
@@ -628,14 +635,14 @@
         line-height: 1.5;
       }
 
-      /* 핵심: PC에서도 세로형 썸네일 유지 */
+      /* 핵심: PC 촬영된 사진 틀도 세로형 */
       .thumbs {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
       }
 
       .thumb {
-        aspect-ratio: 3 / 4;
+        aspect-ratio: 3 / 4 !important;
         font-size: 12px;
       }
 
@@ -805,7 +812,7 @@
         </div>
 
         <p class="notice">
-          결과 화면에서는 저장 버튼이 하단에 항상 보이도록 수정했습니다.
+          PC에서는 미리보기와 촬영된 사진 틀이 세로형으로 보입니다.
         </p>
       </div>
     </section>
@@ -871,7 +878,17 @@
     function syncVideoPreviewRatio() {
       const vw = video.videoWidth;
       const vh = video.videoHeight;
-      if (!vw || !vh) return;
+
+      if (window.innerWidth >= 760) {
+        videoWrap.style.aspectRatio = "3 / 4";
+        return;
+      }
+
+      if (!vw || !vh) {
+        videoWrap.style.aspectRatio = "3 / 4";
+        return;
+      }
+
       videoWrap.style.aspectRatio = `${vw} / ${vh}`;
     }
 
@@ -879,8 +896,14 @@
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-        if (!audioCtx) audioCtx = new AudioContext();
-        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+        }
+
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
       } catch (e) {
         console.warn("오디오 초기화 실패:", e);
       }
@@ -892,6 +915,7 @@
         if (!audioCtx) return;
 
         const now = audioCtx.currentTime;
+
         const masterGain = audioCtx.createGain();
         masterGain.gain.setValueAtTime(0.0001, now);
         masterGain.gain.exponentialRampToValueAtTime(0.6, now + 0.01);
@@ -900,25 +924,33 @@
 
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
+
         osc1.type = "square";
         osc1.frequency.setValueAtTime(1200, now);
+
         gain1.gain.setValueAtTime(0.0001, now);
         gain1.gain.exponentialRampToValueAtTime(0.45, now + 0.005);
         gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
         osc1.connect(gain1);
         gain1.connect(masterGain);
+
         osc1.start(now);
         osc1.stop(now + 0.05);
 
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
+
         osc2.type = "triangle";
         osc2.frequency.setValueAtTime(700, now + 0.06);
+
         gain2.gain.setValueAtTime(0.0001, now + 0.06);
         gain2.gain.exponentialRampToValueAtTime(0.35, now + 0.065);
         gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
         osc2.connect(gain2);
         gain2.connect(masterGain);
+
         osc2.start(now + 0.06);
         osc2.stop(now + 0.15);
       } catch (e) {
@@ -940,8 +972,15 @@
       shotCountEl.textContent = shots.length;
       shotMiniCount.textContent = shots.length;
 
-      const modeText = currentMode === "manual" ? "수동 촬영" : `${currentMode}초 자동촬영`;
-      const captureText = currentMode === "manual" ? "사진 촬영" : `${currentMode}초 자동촬영 시작`;
+      const modeText =
+        currentMode === "manual"
+          ? "수동 촬영"
+          : `${currentMode}초 자동촬영`;
+
+      const captureText =
+        currentMode === "manual"
+          ? "사진 촬영"
+          : `${currentMode}초 자동촬영 시작`;
 
       modeLabelEl.textContent = modeText;
       guideText.textContent = `촬영 모드: ${modeText}`;
@@ -958,6 +997,7 @@
 
     function renderThumbs() {
       thumbs.innerHTML = "";
+
       for (let i = 0; i < 4; i++) {
         const box = document.createElement("div");
         box.className = "thumb";
@@ -970,15 +1010,18 @@
         } else {
           box.textContent = `${i + 1}번`;
         }
+
         thumbs.appendChild(box);
       }
     }
 
     function setMode(mode) {
       currentMode = mode;
+
       modeButtons.forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.mode === mode);
       });
+
       updateStatus();
     }
 
@@ -992,9 +1035,12 @@
     async function setCameraZoomToOne() {
       try {
         if (!stream) return;
+
         const track = stream.getVideoTracks()[0];
         if (!track) return;
+
         const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+
         if ("zoom" in capabilities) {
           await track.applyConstraints({
             advanced: [{ zoom: 1 }]
@@ -1031,6 +1077,7 @@
         await setCameraZoomToOne();
       } catch (err) {
         console.error(err);
+
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
@@ -1066,6 +1113,7 @@
         countOverlay.classList.add("show");
         await wait(1000);
       }
+
       countOverlay.classList.remove("show");
     }
 
@@ -1080,10 +1128,12 @@
 
       captureCanvas.width = vw;
       captureCanvas.height = vh;
+
       capCtx.clearRect(0, 0, vw, vh);
       capCtx.drawImage(video, 0, 0, vw, vh);
 
       playShutterSound();
+
       return captureCanvas.toDataURL("image/png");
     }
 
@@ -1091,14 +1141,22 @@
       cameraScreen.classList.remove("active");
       editorScreen.classList.add("active");
       buildPreview();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     }
 
     function switchToCamera() {
       editorScreen.classList.remove("active");
       cameraScreen.classList.add("active");
       startCamera();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     }
 
     function buildPreview() {
@@ -1111,6 +1169,7 @@
       SLOT_CONFIG.forEach((slot, index) => {
         const slotBox = document.createElement("div");
         slotBox.className = "slot";
+
         slotBox.style.left = `${slot.x * 100}%`;
         slotBox.style.top = `${slot.y * 100}%`;
         slotBox.style.width = `${slot.w * 100}%`;
@@ -1139,7 +1198,9 @@
       shots.push(photo);
       updateStatus();
 
-      if (shots.length === 4) switchToEditor();
+      if (shots.length === 4) {
+        switchToEditor();
+      }
     }
 
     async function handleAutoCapture(intervalSec) {
@@ -1151,6 +1212,7 @@
       try {
         while (shots.length < 4) {
           await showCountdown(intervalSec);
+
           const photo = capturePhoto();
           if (!photo) break;
 
@@ -1160,7 +1222,9 @@
           if (shots.length >= 4) break;
         }
 
-        if (shots.length === 4) switchToEditor();
+        if (shots.length === 4) {
+          switchToEditor();
+        }
       } finally {
         isCapturing = false;
         setButtonsDisabled(false);
@@ -1216,12 +1280,14 @@
 
     function getTimestampForFileName() {
       const now = new Date();
+
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
       const dd = String(now.getDate()).padStart(2, "0");
       const hh = String(now.getHours()).padStart(2, "0");
       const mi = String(now.getMinutes()).padStart(2, "0");
       const ss = String(now.getSeconds()).padStart(2, "0");
+
       return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
     }
 
@@ -1240,6 +1306,7 @@
       for (let i = 0; i < SLOT_CONFIG.length; i++) {
         const slot = SLOT_CONFIG[i];
         const src = shots[i];
+
         if (!src) continue;
 
         const img = await loadImage(src);
